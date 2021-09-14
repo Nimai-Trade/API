@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,6 +72,9 @@ public class RegisterServiceImpl implements RegisterUserService {
 	@Autowired
 	OwnerMasterRepository omr;
 
+	@Value("${referrer.fieo}")
+	private String fieoRefId;
+	
 	@Override
 	public PersonalDetailsBean savePersonalDetails(PersonalDetailsBean personDetailsBean) {
 		// Changes from Sravan
@@ -136,6 +140,7 @@ public class RegisterServiceImpl implements RegisterUserService {
 		if (personDetailsBean.getAccount_type().equalsIgnoreCase("MASTER")) {
 			nc.settCInsertedDate(Calendar.getInstance().getTime());
 			nc.setTcFlag(personDetailsBean.getTcFlag());
+			nc.setLeadId(personDetailsBean.getLeadId());
 		}
 		
 		// End
@@ -172,6 +177,7 @@ public class RegisterServiceImpl implements RegisterUserService {
 		} else {
 			if (personDetailsBean.getAccount_type().equalsIgnoreCase("REFER")) {
 				nc.setCompanyName(personDetailsBean.getCompanyName());
+				nc.setLeadId(0);
 			} else {
 				nc.setCompanyName("");
 			}
@@ -179,6 +185,15 @@ public class RegisterServiceImpl implements RegisterUserService {
 			nc.setBusinessType("");  
 		}
 
+		if(personDetailsBean.getLeadId()==null)
+			nc.setLeadId(0);
+		else
+			nc.setLeadId(personDetailsBean.getLeadId());
+		if(personDetailsBean.getAccount_source().equalsIgnoreCase("fieo"))
+		{
+			nc.setAccountSource(fieoRefId);
+			nc.setAccountType("REFER");
+		}
 		nc.setInsertedDate(Calendar.getInstance().getTime());
 		nc.setModifiedDate(Calendar.getInstance().getTime());
 		nc.setPaymentStatus("Pending");

@@ -18,11 +18,13 @@ import org.modelmapper.convention.MatchingStrategies;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nimai.ucm.bean.FieoMember;
 import com.nimai.ucm.bean.GenericResponse;
 import com.nimai.ucm.bean.NimaiCustomerBean;
 import com.nimai.ucm.bean.NimaiCustomerReferrerBean;
@@ -34,10 +36,12 @@ import com.nimai.ucm.entity.NimaiCustomer;
 import com.nimai.ucm.entity.NimaiMSubscription;
 import com.nimai.ucm.entity.NimaiSubscriptionDetails;
 import com.nimai.ucm.entity.Refer;
+import com.nimai.ucm.entity.ReferralLeads;
 import com.nimai.ucm.repository.CustomerRepository;
 import com.nimai.ucm.repository.NimaiMSubscriptionRepo;
 import com.nimai.ucm.repository.NimaiSubscriptionDetailsRepo;
 import com.nimai.ucm.repository.ReferRepository;
+import com.nimai.ucm.repository.ReferralLeadsRepo;
 import com.nimai.ucm.repository.UserDetailRepository;
 import com.nimai.ucm.repository.getRegisterUserRepo;
 import com.nimai.ucm.repository.nimaiSystemConfigRepository;
@@ -78,10 +82,16 @@ public class ReferServiceImpl implements ReferService {
 
 	@Autowired
 	CustomerRepository cuRepo;
+	
+	@Autowired
+	ReferralLeadsRepo refLeads;
 
 	@Autowired
 	nimaiSystemConfigRepository systemConfig;
 
+	@Value("${referrer.fieo}")
+	private String fieoRefId;
+	
 	@Override
 	public ReferIdBean saveReferService(ReferBean referbean, String r1) {
 		GenericResponse response = new GenericResponse();
@@ -323,62 +333,123 @@ public class ReferServiceImpl implements ReferService {
 	@Override
 	public List<NimaiCustomerReferrerBean> getRegisterUserByReferrerUser(String emailId) {
 		// Changes from Dhiraj
-		try {
-			List<Refer> registerUsers = referRepo.findRegisterUserByReferrerEmail(emailId);
-			LOGGER.info(registerUsers.toString());
-			List<NimaiCustomerReferrerBean> custList = new ArrayList<>();
-
-			for (Refer nc : registerUsers) {
-				NimaiCustomer customerDetails = new NimaiCustomer();
-				LOGGER.info("============parentApprovalStatus:" + nc.getUserid().getKycStatus());
-				String parentkycStatus = nc.getUserid().getKycStatus();
-				NimaiCustomerReferrerBean ncb = new NimaiCustomerReferrerBean();
-				LOGGER.info("============cuUserIdDetails:" + nc.getEmailAddress());
-				try {
-					customerDetails = getRegiUserRepo.findRegisterUserByReferrerEmail(nc.getEmailAddress());
-					LOGGER.info("============cuUserIdDetails:" + customerDetails.getUserid());
-					String cuKycStatus = customerDetails.getKycStatus();
-					if (parentkycStatus == null || parentkycStatus.isEmpty()
-							|| parentkycStatus.equalsIgnoreCase(AppConstants.KYCSTATUS)) {
-						ncb = modelMapperUtil.mapNcbResponse(customerDetails, nc);
-					} else if ((cuKycStatus == null || cuKycStatus.isEmpty()
-							|| cuKycStatus.equalsIgnoreCase(AppConstants.KYCSTATUS))) {
-						ncb = modelMapperUtil.mapNcbResponse(customerDetails, nc);
-					} else {
-						String Status = AppConstants.SPLAN_STATUS;
-						List<Object[]> results = getRegiUserRepo.findRegisterUser(customerDetails.getUserid(), Status);
-
-						if (results != null
-								&& (customerDetails.getPaymentStatus().equalsIgnoreCase("Approved")
-										|| customerDetails.getPaymentStatus().equalsIgnoreCase("Success"))
-								&& customerDetails.getKycStatus().equalsIgnoreCase("Approved")) {
-							LOGGER.info("============cuUserIdDetails:" + results.toString());
-							Float referEarning = Float.valueOf(systemConfig.earningPercentage());
-							Float actualREarning = (float) (referEarning / 100);
-							System.out.println("actual earning " + actualREarning);
-							ncb = modelMapperUtil.mapNcbResults(customerDetails, nc, results, actualREarning);
-						} else {
-							ncb = modelMapperUtil.mapNcbResponse(customerDetails, nc);
-
+		String userId=referRepo.getUserIdByEmail(emailId);
+		LOGGER.info("UserId By Email ID: "+userId);
+		if(userId.equalsIgnoreCase(fieoRefId))
+		{
+			try {
+				List<NimaiCustomer> registerUsers = getRegiUserRepo.findFieoRegisterUser();
+				LOGGER.info(registerUsers.toString());
+				List<NimaiCustomerReferrerBean> custList = new ArrayList<>();
+				for (NimaiCustomer nc : registerUsers) {
+					NimaiCustomer customerDetails = new NimaiCustomer();
+					LOGGER.info("============parentApprovalStatus:" + nc.getKycStatus());
+					String parentkycStatus = nc.getKycStatus();
+					NimaiCustomerReferrerBean ncb = new NimaiCustomerReferrerBean();
+					LOGGER.info("============cuUserIdDetails:" + nc.getEmailAddress());
+					try {
+						customerDetails = getRegiUserRepo.findRegisterUserByReferrerEmail(nc.getEmailAddress());
+						LOGGER.info("============cuUserIdDetails:" + customerDetails.getUserid());
+						String cuKycStatus = customerDetails.getKycStatus();
+						if (parentkycStatus == null || parentkycStatus.isEmpty()
+								|| parentkycStatus.equalsIgnoreCase(AppConstants.KYCSTATUS)) {
+							ncb = modelMapperUtil.mapfieoLeadResponse(customerDetails, nc);
+						} else if ((cuKycStatus == null || cuKycStatus.isEmpty()
+								|| cuKycStatus.equalsIgnoreCase(AppConstants.KYCSTATUS))) {
+							ncb = modelMapperUtil.mapfieoLeadResponse(customerDetails, nc);
+						} 
+						else {
+							String Status = AppConstants.SPLAN_STATUS;
+							List<Object[]> results = getRegiUserRepo.findRegisterUser(customerDetails.getUserid(), Status);
+	
+							if (results != null
+									&& (customerDetails.getPaymentStatus().equalsIgnoreCase("Approved")
+											|| customerDetails.getPaymentStatus().equalsIgnoreCase("Success"))
+									&& customerDetails.getKycStatus().equalsIgnoreCase("Approved")) {
+								LOGGER.info("============cuUserIdDetails:" + results.toString());
+								Float referEarning = Float.valueOf(systemConfig.earningPercentage());
+								Float actualREarning = (float) (referEarning / 100);
+								System.out.println("actual earning " + actualREarning);
+								ncb = modelMapperUtil.mapFieoReferResults(customerDetails, nc, results, actualREarning);
+							} else {
+								ncb = modelMapperUtil.mapfieoLeadResponse(customerDetails, nc);
+	
+							}
 						}
+					} catch (NullPointerException e) {
+						e.printStackTrace();
+						System.out.println("catch");
+						continue;
 					}
-				} catch (NullPointerException e) {
-					e.printStackTrace();
-					System.out.println("catch");
-					continue;
+	
+					custList.add(ncb);
+	
 				}
-
-				custList.add(ncb);
-
+				return custList;
+			} catch (Exception e) {
+				e.printStackTrace();
+				response.setErrMessage("Referrer list not available");
+				return null;
 			}
-			return custList;
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			response.setErrMessage("Referrer list not available");
-			return null;
 		}
-
+		else
+		{
+			try {
+				List<Refer> registerUsers = referRepo.findRegisterUserByReferrerEmail(emailId);
+				LOGGER.info(registerUsers.toString());
+				List<NimaiCustomerReferrerBean> custList = new ArrayList<>();
+	
+				for (Refer nc : registerUsers) {
+					NimaiCustomer customerDetails = new NimaiCustomer();
+					LOGGER.info("============parentApprovalStatus:" + nc.getUserid().getKycStatus());
+					String parentkycStatus = nc.getUserid().getKycStatus();
+					NimaiCustomerReferrerBean ncb = new NimaiCustomerReferrerBean();
+					LOGGER.info("============cuUserIdDetails:" + nc.getEmailAddress());
+					try {
+						customerDetails = getRegiUserRepo.findRegisterUserByReferrerEmail(nc.getEmailAddress());
+						LOGGER.info("============cuUserIdDetails:" + customerDetails.getUserid());
+						String cuKycStatus = customerDetails.getKycStatus();
+						if (parentkycStatus == null || parentkycStatus.isEmpty()
+								|| parentkycStatus.equalsIgnoreCase(AppConstants.KYCSTATUS)) {
+							ncb = modelMapperUtil.mapNcbResponse(customerDetails, nc);
+						} else if ((cuKycStatus == null || cuKycStatus.isEmpty()
+								|| cuKycStatus.equalsIgnoreCase(AppConstants.KYCSTATUS))) {
+							ncb = modelMapperUtil.mapNcbResponse(customerDetails, nc);
+						} else {
+							String Status = AppConstants.SPLAN_STATUS;
+							List<Object[]> results = getRegiUserRepo.findRegisterUser(customerDetails.getUserid(), Status);
+	
+							if (results != null
+									&& (customerDetails.getPaymentStatus().equalsIgnoreCase("Approved")
+											|| customerDetails.getPaymentStatus().equalsIgnoreCase("Success"))
+									&& customerDetails.getKycStatus().equalsIgnoreCase("Approved")) {
+								LOGGER.info("============cuUserIdDetails:" + results.toString());
+								Float referEarning = Float.valueOf(systemConfig.earningPercentage());
+								Float actualREarning = (float) (referEarning / 100);
+								System.out.println("actual earning " + actualREarning);
+								ncb = modelMapperUtil.mapNcbResults(customerDetails, nc, results, actualREarning);
+							} else {
+								ncb = modelMapperUtil.mapNcbResponse(customerDetails, nc);
+	
+							}
+						}
+					} catch (NullPointerException e) {
+						e.printStackTrace();
+						System.out.println("catch");
+						continue;
+					}
+	
+					custList.add(ncb);
+	
+				}
+				return custList;
+	
+			} catch (Exception e) {
+				e.printStackTrace();
+				response.setErrMessage("Referrer list not available");
+				return null;
+			}
+		}
 	}
 
 	@Override
@@ -406,6 +477,8 @@ public class ReferServiceImpl implements ReferService {
 			}
 			Float referEarning = Float.valueOf(systemConfig.earningPercentage());
 			Float actualREarning = (Float) (referEarning / 100);
+			System.out.println("ReferEarning: "+referEarning);
+			System.out.println("actualEarning: "+actualREarning);
 			if ((nc.getPaymentStatus().equalsIgnoreCase("Approved")
 					|| nc.getPaymentStatus().equalsIgnoreCase("Success"))
 					&& nc.getKycStatus().equalsIgnoreCase("Approved")) {
@@ -452,6 +525,10 @@ public class ReferServiceImpl implements ReferService {
 			}
 			List<NimaiSubscriptionDetails> sPlanList = subRepo.finSplanByReferId(nc.getUserid());
 			if (sPlanList.size() == 1) {
+				if(nc.getPaymentStatus()==null||nc.getKycStatus()==null) {
+					ncb.setTotalEarning(null);
+				}
+				else
 				if ((nc.getPaymentStatus().equalsIgnoreCase("Approved")
 						|| nc.getPaymentStatus().equalsIgnoreCase("Approved"))
 						&& nc.getKycStatus().equalsIgnoreCase("Approved")) {
@@ -501,11 +578,39 @@ public class ReferServiceImpl implements ReferService {
 
 	}
 
+	
 	public static void main(String[] args) {
 		float x = 10;
 		float y = 100;
 		float z = x / y;
 		System.out.println(z);
 
+	}
+
+	@Override
+	public List<FieoMember> getReferrerFieoLeads() {
+		// TODO Auto-generated method stub
+		List<ReferralLeads> rlList=refLeads.getSortedReferralLeads();
+		List<FieoMember> fieomember=new ArrayList<FieoMember>();
+		for(ReferralLeads rl:rlList)
+		{
+			FieoMember fm=new FieoMember();
+			fm.setLeadId(rl.getLeadId());
+			fm.setFirstName(rl.getFirstName());
+			fm.setLastName(rl.getLastName());
+			fm.setCountry(rl.getCountry());
+			fm.setEmailId(rl.getEmailId());
+			fm.setMobileNo(rl.getMobileNo());
+			fm.setIsRegister(refLeads.getUserId(rl.getLeadId())==null?"No":"Yes");
+			fieomember.add(fm);
+		}
+		return fieomember;
+	}
+
+	@Override
+	public String getEmailIdByFieoReferId(String userId) {
+		// TODO Auto-generated method stub
+		NimaiCustomer fieoReferrerDet = getRegiUserRepo.findRegisterUser(userId);
+		return fieoReferrerDet.getEmailAddress();
 	}
 }

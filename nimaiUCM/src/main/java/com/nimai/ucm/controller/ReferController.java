@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nimai.ucm.bean.FieoMember;
 import com.nimai.ucm.bean.GenericResBean;
 import com.nimai.ucm.bean.GenericResponse;
 import com.nimai.ucm.bean.NimaiCustomerBean;
@@ -45,6 +47,9 @@ public class ReferController {
 	@Autowired
 	ReferService referservice;
 
+	@Value("${referrer.fieo}")
+	private String fieoRefId;
+	
 	@Autowired
 	GenericResponse<Object> response;
 
@@ -181,11 +186,20 @@ public class ReferController {
 	}
 
 	@CrossOrigin(origins = "*", allowedHeaders = "*")
-	@GetMapping(value = "/getRegisterUsers/{emailId}")
-	public ResponseEntity<Object> getRegisterUser(@PathVariable String emailId) {
+	@GetMapping(value = "/getRegisterUsers/{userId}/{emailId}")
+	public ResponseEntity<Object> getRegisterUser(@PathVariable String userId,@PathVariable String emailId) {
 
+		List<NimaiCustomerReferrerBean> registeruser;
 		// Changes From Dhiraj
-		List<NimaiCustomerReferrerBean> registeruser = referservice.getRegisterUserByReferrerUser(emailId);
+		if(userId.equalsIgnoreCase(fieoRefId))
+		{
+			String obtainedEmailId=referservice.getEmailIdByFieoReferId(userId);
+			registeruser = referservice.getRegisterUserByReferrerUser(obtainedEmailId);
+		}
+		else
+		{
+			registeruser = referservice.getRegisterUserByReferrerUser(emailId);
+		}
 		if (registeruser.size() == 0) {
 			response.setErrMessage("Referrer list not available");
 		}
@@ -204,5 +218,28 @@ public class ReferController {
 
 		return registeruser;
 	}
+	
+	@CrossOrigin(origins = "*", allowedHeaders = "*")
+	@GetMapping(value = "/referrerChannel/{userId}")
+	public ResponseEntity<Object> getReferrerChannel(@PathVariable String userId) {
 
+		//String fieoReferrerId = referservice.getReferrerUser(userId);
+		if (userId.equalsIgnoreCase(fieoRefId)) 
+			response.setData("FIEO");
+		else
+			response.setData("");
+		return new ResponseEntity<Object>(response, HttpStatus.OK);
+
+	}
+	
+	@CrossOrigin(origins = "*", allowedHeaders = "*")
+	@GetMapping(value = "/getReferrerLeads")
+	public ResponseEntity<Object> getReferrerLeads() {
+
+		List<FieoMember> fieoReferrer = referservice.getReferrerFieoLeads();
+		response.setData(fieoReferrer);
+		return new ResponseEntity<Object>(response, HttpStatus.OK);
+
+	}
+	
 }

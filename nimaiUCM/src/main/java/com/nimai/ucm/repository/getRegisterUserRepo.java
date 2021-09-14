@@ -42,7 +42,7 @@ public interface getRegisterUserRepo extends JpaRepository<NimaiCustomer, String
 	@Query(value="select subscription_name from nimai_subscription_details where userid=(:userid) and status='Active'", nativeQuery = true )
 	String findSubscriptionName(@Param("userid") String userid);
 
-	@Query(value="select subscription_amount from nimai_subscription_details where userid=(:userid) and status='Active'", nativeQuery = true )
+	@Query(value="select grand_amount from nimai_subscription_details where userid=(:userid) and status='Active'", nativeQuery = true )
 	Integer findSubscriptionFee(@Param("userid") String userid);
 
 	@Query(value="SELECT sum((nsd.SUBSCRIPTION_AMOUNT+nsd.VAS_AMOUNT)-(nsd.DISCOUNT)) FROM nimai_subscription_details nsd \r\n" + 
@@ -67,4 +67,7 @@ public interface getRegisterUserRepo extends JpaRepository<NimaiCustomer, String
 			"=nmc.SUBSCRIPTION_ID WHERE nc.USERID=:userid \r\n" + 
 			"AND nsd.`STATUS`=:status AND nmc.`STATUS`=:status",nativeQuery = true)
 	List<Object[]> findRegisterUser(@Param("userid")String userid,@Param("status") String status);
+	
+	@Query("select nc from NimaiCustomer nc where nc.leadId>0 order by nc.accountCreatedDate desc")
+	List<NimaiCustomer> findFieoRegisterUser();
 }

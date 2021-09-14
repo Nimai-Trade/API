@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 
+import com.nimai.ucm.bean.FieoMember;
 import com.nimai.ucm.bean.NimaiCustomerBean;
 import com.nimai.ucm.bean.NimaiCustomerReferrerBean;
 import com.nimai.ucm.bean.NimaiSpecCustomerReferrerBean;
@@ -30,4 +31,8 @@ public interface ReferService {
 	public List<NimaiSpecCustomerReferrerBean> getSpecRegisterUserByUserId(String userid);
 
 	public String checkKycApprovalStatus(String userId);
+
+	public List<FieoMember> getReferrerFieoLeads();
+
+	public String getEmailIdByFieoReferId(String userId);
 }

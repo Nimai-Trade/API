@@ -186,6 +186,8 @@ public class NimaiCustomer implements Serializable {
 	@Column(name = "CUSTOMER_IP_ADDRESS")
 	private String customerIp;
 	
+	@Column(name = "LEAD_ID")
+	private Integer leadId;
 	
 
 	@OneToMany(mappedBy = "userId")
@@ -203,6 +205,14 @@ public class NimaiCustomer implements Serializable {
 	
 	
 	
+	public Integer getLeadId() {
+		return leadId;
+	}
+
+	public void setLeadId(Integer leadId) {
+		this.leadId = leadId;
+	}
+
 	public Date gettCInsertedDate() {
 		return tCInsertedDate;
 	}

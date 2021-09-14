@@ -64,9 +64,17 @@ public class PersonalDetailsBean implements Serializable {
  private String otherType;
  private String otherTypeBank;
  
- 
+ 	private Integer leadId;
 
+ 	
 
+	public Integer getLeadId() {
+		return leadId;
+	}
+
+	public void setLeadId(Integer leadId) {
+		this.leadId = leadId;
+	}
 
 	public String getTcFlag() {
 	return tcFlag;
