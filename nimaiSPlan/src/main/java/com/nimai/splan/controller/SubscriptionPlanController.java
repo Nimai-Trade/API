@@ -197,12 +197,12 @@ public class SubscriptionPlanController {
 	}
 	
 	@CrossOrigin(value = "*", allowedHeaders = "*")
-	@GetMapping("/viewAllCustomerSPlan")
-	public ResponseEntity<?> viewAllCustomerSPlans() {
+	@GetMapping("/viewAllCustomerSPlan/{userId}")
+	public ResponseEntity<?> viewAllCustomerSPlans(@PathVariable("userId") String userID) {
 		logger.info(" ================ Send ViewAllCustomerSPlans API is Invoked ================:");
 		GenericResponse response = new GenericResponse<>();
 		
-			return sPlanService.findAllSPlanDetailsForCustomer();
+			return sPlanService.findAllSPlanDetailsForCustomer(userID);
 		
 
 	}
@@ -686,7 +686,8 @@ public class SubscriptionPlanController {
 			discAmt=0.0;
 		else
 		{
-			discAmt=couponService.discountCalculate(subscriptionRequest.getDiscountId(), subscriptionRequest.getSubscriptionId());
+			HashMap<String,Double> discData=couponService.discountCalculate(subscriptionRequest.getDiscountId(), subscriptionRequest.getSubscriptionId());
+			discAmt=discData.get("discount");
 		}
 		if(subscriptionRequest.getVasId()==0)
 			vasAmt=0.0;

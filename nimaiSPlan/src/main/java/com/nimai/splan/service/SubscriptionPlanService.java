@@ -42,7 +42,7 @@ public interface SubscriptionPlanService {
 
 	NimaiMSubscription getPlanDetailsBySubscriptionId(String string);
 
-	ResponseEntity<?> findAllSPlanDetailsForCustomer();
+	ResponseEntity<?> findAllSPlanDetailsForCustomer(String userId);
 
 	ResponseEntity<?> checkForSubsidiary(SubscriptionBean subscriptionRequest);
 	
@@ -60,5 +60,6 @@ public interface SubscriptionPlanService {
 
 	Map<String, Object> executePayment(String orderId) throws PayPalRESTException;
 
+	
 
 }

@@ -14,5 +14,5 @@ public interface ValidateCoupenService {
 
 	public ResponseEntity<?> removeFromCoupen(String userId, int discountId, NimaiCustomerSubscriptionGrandAmount ncsga);
 	
-	public Double discountCalculate(Double discountId,String subscriptionId);
+	public HashMap<String, Double> discountCalculate(Double discountId,String subscriptionId);
 }

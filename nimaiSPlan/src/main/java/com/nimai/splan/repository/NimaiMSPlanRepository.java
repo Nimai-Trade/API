@@ -16,10 +16,13 @@ public interface NimaiMSPlanRepository extends JpaRepository<NimaiMSubscription,
 	@Query("From NimaiMSubscription s where s.subscriptionId=:subscriptionid" )
 	NimaiMSubscription findDetailBySubscriptionId(String subscriptionid);
 
-	@Query("From NimaiMSubscription s where s.customerType=:string AND s.status = 'Active'" )
-	List<NimaiMSubscription> findByCustomerType(String string);
+	@Query("From NimaiMSubscription s where s.customerType=:string AND s.sPLanCountry=:countryName AND s.status = 'Active'" )
+	List<NimaiMSubscription> findByCustomerType(String string,String countryName);
 
 	@Query(value="SELECT system_config_entity_value from nimai_system_config where system_config_entity='invoice_gst'", nativeQuery = true )
 	Double getGSTValue();
+	
+	@Query(value="select nc.REGISTERED_COUNTRY from nimai_m_customer nc where nc.USERID=:userId", nativeQuery = true )
+	String getBusinessCountry(String userId);
 	
 }

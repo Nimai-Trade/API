@@ -94,10 +94,29 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 			Optional<NimaiMCustomer> custDet=userRepository.findByUserId(userId);
 			String businessCountry=custDet.get().getRegistredCountry();
 			System.out.println("Business Country: "+businessCountry);
-			
+			String promoCode="",emailID="";
 			String couponType="";
 			int couponCount;
-			couponType= nimaimmRepo.getCouponTypeByCoupenCodeSubscriptionNameStatusAndConsumption(coupenCode,subscriptionName,coupenFor,businessCountry);
+			Integer leadID=nimaimmRepo.getLeadId(userId);
+			
+			//FIEO Changes - Adil - 23 AUG 2021
+			logger.info("Lead ID: "+leadID);
+			System.out.println("Lead ID: "+leadID);
+			emailID=nimaimmRepo.getEmailId(userId);
+			promoCode=nimaimmRepo.getPromoCode(emailID);
+			if(promoCode==null)
+				promoCode="";
+			
+			System.out.println("emailID: "+emailID);
+			System.out.println("promoCode: "+promoCode);
+			if(leadID>0 && !promoCode.equalsIgnoreCase(""))
+			{
+				System.out.println("In lead section of coupon");
+				couponType= nimaimmRepo.getCouponTypeByCoupenCode(coupenCode);
+				System.out.println("CouponType: "+couponType);
+			}
+			else
+				couponType= nimaimmRepo.getCouponTypeByCoupenCodeSubscriptionNameStatusAndConsumption(coupenCode,subscriptionName,coupenFor,businessCountry);
 			System.out.println("Coupon Type: "+couponType);
 			logger.info("Coupon Type: "+couponType);
 			logger.info("Coupon For: "+coupenFor);
@@ -108,7 +127,7 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 			System.out.println("Coupon count :"+couponCount);
 			if(couponType.equalsIgnoreCase("nc") && couponCount>0)
 			{
-					return proceedForDiscountProcess(userId,subscriptionId,coupenCode,businessCountry,subscriptionName,coupenFor,subscriptionAmount);
+					return proceedForDiscountProcess(userId,subscriptionId,coupenCode,businessCountry,subscriptionName,coupenFor,subscriptionAmount,leadID);
 			}
 			else if(couponType.equalsIgnoreCase("pc") && couponCount>0)
 			{
@@ -121,7 +140,7 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 				}
 				else
 				{
-					return proceedForDiscountProcess(userId,subscriptionId,coupenCode,businessCountry,subscriptionName,coupenFor,subscriptionAmount);
+					return proceedForDiscountProcess(userId,subscriptionId,coupenCode,businessCountry,subscriptionName,coupenFor,subscriptionAmount,0);
 				}
 			}
 			else
@@ -165,21 +184,38 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 	}
 	
 	private ResponseEntity<?> proceedForDiscountProcess(String userId,String subscriptionId,String coupenCode, String businessCountry, String subscriptionName,
-			String coupenFor,Integer subscriptionAmount)
+			String coupenFor,Integer subscriptionAmount,Integer leadID)
 	{
 		GenericResponse response = new GenericResponse<>();
 		Date today=new Date();
-		Double finalAmount;
-		String discountType= nimaimmRepo.getDiscountTypeByCoupenCodeSubscriptionNameStatusAndConsumption(coupenCode,subscriptionName,coupenFor,businessCountry);
+		Double finalAmount,discountId;;
+		String discountType,emailID="",promoCode="";
+		
+		emailID=nimaimmRepo.getEmailId(userId);
+		promoCode=nimaimmRepo.getPromoCode(emailID);
+		if(promoCode==null)
+			promoCode="";
+		
+		if(leadID>0 && !promoCode.equalsIgnoreCase(""))
+		{
+			discountType= nimaimmRepo.getDiscountTypeByCoupenCodeStatusAndConsumption(coupenCode);
+			discountId=nimaimmRepo.getDiscountIdByCouponCode(coupenCode);
+		}
+		else
+		{
+			discountType= nimaimmRepo.getDiscountTypeByCoupenCodeSubscriptionNameStatusAndConsumption(coupenCode,subscriptionName,coupenFor,businessCountry);
+			discountId=nimaimmRepo.getDiscountId(coupenCode,businessCountry,subscriptionName,coupenFor);
+		}
 		System.out.println("Current Date: "+today);
 		System.out.println("Discount Type: "+discountType);
-		Double discountId=nimaimmRepo.getDiscountId(coupenCode,businessCountry,subscriptionName,coupenFor);
+		
 		Integer subsAmount=subscriptionDetailsRepository.getSubscriptionAmt(subscriptionId);
 		
 		if(discountType.equalsIgnoreCase("Fixed"))
 		{
 			Double discAmount=nimaimmRepo.getDiscAmountByDiscId(discountId);
-			Double discountedAmount=nimaimmRepo.getAmountByCoupenCode(coupenFor,coupenCode,businessCountry,subscriptionName);
+			//Double discountedAmount=nimaimmRepo.getAmountByCoupenCode(coupenFor,coupenCode,businessCountry,subscriptionName);
+			Double discountedAmount=nimaimmRepo.getAmountByDiscId(discountId);
 			finalAmount=subscriptionAmount-discountedAmount;
 			if(finalAmount>=0)
 			{
@@ -297,7 +333,7 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 	}
 	
 	@Override
-	public Double discountCalculate(Double discountId,String subscriptionId)
+	public HashMap<String,Double> discountCalculate(Double discountId,String subscriptionId)
 	{
 		logger.info("Discount Calculation");
 		GenericResponse response = new GenericResponse<>();
@@ -321,18 +357,23 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 			logger.info("Final Amount: "+finalAmount);
 			if(finalAmount>=0)
 			{
-				return discountedAmount;
-			//	HashMap<String,Double> data=new HashMap<>();
-			//	data.put("discountId", discountId);
-			//	data.put("discount", discountedAmount);
-			//	data.put("grandAmount", finalAmount);
+				//return discountedAmount;
+				HashMap<String,Double> data=new HashMap<>();
+				data.put("discountId", discountId);
+				data.put("discount", discountedAmount);
+				data.put("grandAmount", finalAmount);
+				return data;
 			//	response.setStatus("Coupon Applied Successfully");
 			//	response.setData(data);
 			//	return new ResponseEntity<Object>(response, HttpStatus.OK);
 			}
 			else
 			{
-				return 0.0;
+				HashMap<String,Double> data=new HashMap<>();
+				data.put("discountId", discountId);
+				data.put("discount", 0.0);
+				data.put("grandAmount", finalAmount);
+				return data;
 			//	response.setStatus("Failure");
 			//	response.setData("0");
 			//	return new ResponseEntity<Object>(response, HttpStatus.OK);
@@ -352,11 +393,12 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 				logger.info("Final Amount: "+finalAmount);
 				if(finalAmount>=0)
 				{
-					return subsValue;
-					//HashMap<String,Double> data1=new HashMap<>();
-					//data1.put("discountId", discountId);
-					//data1.put("discount", subsValue);
-					//data1.put("grandAmount", finalAmount);
+					//return subsValue;
+					HashMap<String,Double> data1=new HashMap<>();
+					data1.put("discountId", discountId);
+					data1.put("discount", subsValue);
+					data1.put("grandAmount", finalAmount);
+					return data1;
 					//subscriptionDetailsRepository.updateDiscountId(userId,discountId);
 					//response.setStatus("Coupon Applied Successfully");
 					//response.setData(data1);
@@ -364,7 +406,12 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 				}
 				else
 				{
-					return 0.0;
+					//return 0.0;
+					HashMap<String,Double> data1=new HashMap<>();
+					data1.put("discountId", discountId);
+					data1.put("discount", 0.0);
+					data1.put("grandAmount", finalAmount);
+					return data1;
 				}
 			}
 			else
@@ -373,11 +420,12 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 				logger.info("Final Amount: "+finalAmount);
 				if(finalAmount>=0)
 				{
-					return maxDiscount;
-				//	HashMap<String,Double> data1=new HashMap<>();
-				//	data1.put("discountId", discountId);
-				//	data1.put("discount", maxDiscount);
-				//	data1.put("grandAmount", finalAmount);
+					//return maxDiscount;
+					HashMap<String,Double> data1=new HashMap<>();
+					data1.put("discountId", discountId);
+					data1.put("discount", maxDiscount);
+					data1.put("grandAmount", finalAmount);
+					return data1;
 					//subscriptionDetailsRepository.updateDiscountId(userId,discountId);
 				//	response.setStatus("Coupon Applied Successfully");
 				//	response.setData(data1);
@@ -385,14 +433,24 @@ public class ValidateCoupenServiceImpl implements ValidateCoupenService{
 				}
 				else
 				{
-					return 0.0;
+					//return 0.0;
+					HashMap<String,Double> data1=new HashMap<>();
+					data1.put("discountId", discountId);
+					data1.put("discount", 0.0);
+					data1.put("grandAmount", finalAmount);
+					return data1;
 				}
 			}
 			
 		}
 		else
 		{
-			return 0.0;
+			//return 0.0;
+			HashMap<String,Double> data1=new HashMap<>();
+			data1.put("discountId", discountId);
+			data1.put("discount", 0.0);
+			data1.put("grandAmount", 0.0);
+			return data1;
 		}
 			
 	}

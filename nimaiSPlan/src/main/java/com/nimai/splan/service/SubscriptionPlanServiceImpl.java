@@ -1522,13 +1522,15 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 	}
 
 	@Override
-	public ResponseEntity<?> findAllSPlanDetailsForCustomer() {
+	public ResponseEntity<?> findAllSPlanDetailsForCustomer(String userId) {
 		GenericResponse response = new GenericResponse<>();
 		logger.info("======findCustomerSPlanDetails method invoked===========");
 		try {
 			SPlanResponseBean sPlanResponseBean = new SPlanResponseBean();
-
-			List<NimaiMSubscription> custSPlanList = masterSPlanRepo.findByCustomerType("Customer");
+			
+			String countryName=masterSPlanRepo.getBusinessCountry(userId);
+			logger.info("======findCustomerSPlanDetails method invoked for country:==========="+countryName);
+			List<NimaiMSubscription> custSPlanList = masterSPlanRepo.findByCustomerType("Customer",countryName);
 			System.out.println(custSPlanList.toString());
 			if (!custSPlanList.isEmpty()) {
 				List<customerSPlansResponse> custSubscriptionBean = ModelMapper
