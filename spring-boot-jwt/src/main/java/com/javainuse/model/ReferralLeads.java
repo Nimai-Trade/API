@@ -24,8 +24,14 @@ public class ReferralLeads implements Serializable
 	@Column(name = "LEAD_ID")
 	private Integer leadId;
 	
+	@Column(name="P_ID")
+	private String pId;
+	
 	@Column(name="REFERRAL_ID")
 	private String referralId;
+	
+	@Column(name="REFER_BY")
+	private String referBy;
 	
 	@Column(name="FIRST_NAME")
 	private String firstName;
@@ -60,6 +66,24 @@ public class ReferralLeads implements Serializable
 	@Column(name="COUNTRY")
 	private String country;
 	
+	@Column(name="PINCODE")
+	private String pincode;
+	
+	@Column(name="MEMBERSHIP_STATUS")
+	private String membershipStatus;
+	
+	@Column(name="REDIRECT_URL")
+	private String redirectUrl;
+	
+	@Column(name="IEC")
+	private String iec;
+	
+	@Column(name="FAX")
+	private String fax;
+	
+	@Column(name="GSTIN")
+	private String gstin;
+	
 	@Column(name="INSERTED_BY")
 	private String insertedBy;
 	
@@ -88,6 +112,15 @@ public class ReferralLeads implements Serializable
 
 	public void setReferralId(String referralId) {
 		this.referralId = referralId;
+	}
+
+	
+	public String getReferBy() {
+		return referBy;
+	}
+
+	public void setReferBy(String referBy) {
+		this.referBy = referBy;
 	}
 
 	public String getFirstName() {
@@ -177,6 +210,14 @@ public class ReferralLeads implements Serializable
 	public void setCountry(String country) {
 		this.country = country;
 	}
+	
+	public String getMembershipStatus() {
+		return membershipStatus;
+	}
+
+	public void setMembershipStatus(String membershipStatus) {
+		this.membershipStatus = membershipStatus;
+	}
 
 	public String getInsertedBy() {
 		return insertedBy;
@@ -208,6 +249,54 @@ public class ReferralLeads implements Serializable
 
 	public void setModifiedDate(Date modifiedDate) {
 		this.modifiedDate = modifiedDate;
+	}
+
+	public String getpId() {
+		return pId;
+	}
+
+	public void setpId(String pId) {
+		this.pId = pId;
+	}
+
+	public String getPincode() {
+		return pincode;
+	}
+
+	public void setPincode(String pincode) {
+		this.pincode = pincode;
+	}
+
+	public String getRedirectUrl() {
+		return redirectUrl;
+	}
+
+	public void setRedirectUrl(String redirectUrl) {
+		this.redirectUrl = redirectUrl;
+	}
+
+	public String getIec() {
+		return iec;
+	}
+
+	public void setIec(String iec) {
+		this.iec = iec;
+	}
+
+	public String getFax() {
+		return fax;
+	}
+
+	public void setFax(String fax) {
+		this.fax = fax;
+	}
+
+	public String getGstin() {
+		return gstin;
+	}
+
+	public void setGstin(String gstin) {
+		this.gstin = gstin;
 	}
 	
 	

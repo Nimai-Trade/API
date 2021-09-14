@@ -11,5 +11,6 @@ import com.javainuse.model.ReferralLeads;
 @Repository
 public interface ReferralLeadsRepo extends JpaRepository<ReferralLeads, Integer>
 {
-	
+	@Query(value="select distinct * from referral_leads  rl where rl.EMAIL=:emailId and rl.FIRST_NAME=:firstname and rl.LAST_NAME=:lastName group by email,first_name,last_name", nativeQuery=true)
+	ReferralLeads getRlDetails(String emailId,String firstname, String lastName);
 }
