@@ -38,7 +38,7 @@ public class kycValidator {
 						return "Business document should not be empty";
 					}
 					 //pdf, jpeg, png, tiff
-					String fileExt=templist.getEncodedFileContent().substring(templist.getEncodedFileContent().lastIndexOf(".") + 1).substring(0, 3);
+					String fileExt=templist.getEncodedFileContent().substring(templist.getEncodedFileContent().lastIndexOf(".") + 1).substring(0, 3).toLowerCase();
 						System.out.println(fileExt+" is extension.");	
 						String splitted =templist.getEncodedFileContent().substring(0,82);
 						System.out.println("BEfore |: "+splitted);
@@ -66,7 +66,7 @@ public class kycValidator {
 					if ((templist.getDocumentName()) == null || (templist.getDocumentName().trim().isEmpty())) {
 						return "Personal document name should not be empty";
 					}
-					String fileExt=templist.getEncodedFileContent().substring(templist.getEncodedFileContent().lastIndexOf(".") + 1).substring(0, 3);
+					String fileExt=templist.getEncodedFileContent().substring(templist.getEncodedFileContent().lastIndexOf(".") + 1).substring(0, 3).toLowerCase();
 					System.out.println(fileExt+" is extension.");	
 					String splitted =templist.getEncodedFileContent().substring(0,82);
 					System.out.println("BEfore |: "+splitted);
