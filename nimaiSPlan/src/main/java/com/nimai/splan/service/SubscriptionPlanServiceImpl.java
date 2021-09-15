@@ -1280,13 +1280,13 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 			    {
 					if(order.purchaseUnits().get(0).amountWithBreakdown().amountBreakdown().discount().value().equalsIgnoreCase("0") 
 							|| order.purchaseUnits().get(0).amountWithBreakdown().amountBreakdown().discount().value()==null)	
-						discountPrice="";
+						discountPrice="0";
 					else
 						discountPrice=order.purchaseUnits().get(0).amountWithBreakdown().amountBreakdown().discount().value();
 				}
 				catch(NullPointerException e)
 				{
-					discountPrice="";
+					discountPrice="0";
 				}
 								
 				String merchantP1=planSplit[0];
