@@ -14,8 +14,8 @@ import com.javainuse.model.Refer;
 @Repository
 public interface ReferRepository extends JpaRepository<Refer, Integer> {
 
-	@Query(value = "select * from nimai_m_refer rl where rl.EMAIL_ADDRESS= :emailAddress and rl.FIRST_NAME= :firstName and rl.LAST_NAME= :lastName",nativeQuery = true)
-	Refer getRefelDetails(String emailAddress, String firstName, String lastName);
+	@Query(value = "select * from nimai_m_refer rl where rl.EMAIL_ADDRESS= :emailAddress and rl.MOBILE_NO= :mobileNo",nativeQuery = true)
+	Refer getRefelDetails(String emailAddress, String mobileNo);
 
 	
 }

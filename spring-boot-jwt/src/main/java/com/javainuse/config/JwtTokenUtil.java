@@ -133,7 +133,7 @@ public class JwtTokenUtil implements Serializable {
 		System.out.println("Mobile no: "+mobNo);
 		String emailID=body.get("pb_email").toString().toLowerCase();
 		ReferralLeads rl=new ReferralLeads();
-		ReferralLeads updateRl=refRepo.getRlDetails(emailID,firstName,lastName);
+		ReferralLeads updateRl=refRepo.getRlDetails(emailID,mobNo);
 		
 		if(updateRl==null ) {
 			rl.setpId(""+body.get("pb_p_id"));
@@ -213,7 +213,7 @@ public class JwtTokenUtil implements Serializable {
 		try {
 			ReferenceIdUniqueNumber refernceId = new ReferenceIdUniqueNumber();
 			NimaiCustomer cusdetails = cuRepo.getOne(rl.getReferBy());
-			Refer updateReferl=referRepo.getRefelDetails(rl.getEmailId(),rl.getFirstName(),rl.getLastName());
+			Refer updateReferl=referRepo.getRefelDetails(rl.getEmailId(),rl.getMobileNo());
 			//if(updateReferl==null) {
 			if(flag.equalsIgnoreCase("save")) {
 				String rid = refernceId.uniqueNumberReferenceId();
