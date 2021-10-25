@@ -1,5 +1,6 @@
 package com.nimai.lc.service;
 
+import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -18,6 +19,7 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.ParameterMode;
 import javax.persistence.StoredProcedureQuery;
 
+import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,15 +56,22 @@ import com.nimai.lc.repository.LCPortRepository;
 import com.nimai.lc.repository.LCRepository;
 import com.nimai.lc.repository.NimaiClientRepository;
 import com.nimai.lc.repository.NimaiEmailSchedulerAlertToBanksRepository;
+import com.nimai.lc.repository.NimaiSystemConfigRepository;
 import com.nimai.lc.repository.QuotationMasterRepository;
 import com.nimai.lc.repository.QuotationRepository;
 import com.nimai.lc.repository.TransactionSavingRepo;
+import com.nimai.lc.utility.AESUtil;
 import com.nimai.lc.utility.ErrorDescription;
 import com.nimai.lc.utility.ModelMapperUtil;
+
+import ch.qos.logback.classic.Logger;
 
 @Service
 public class LCServiceImpl implements LCService {
 
+	@Autowired
+	NimaiSystemConfigRepository systemConfig;
+	
 	@Autowired
 	NimaiEmailSchedulerAlertToBanksRepository userDao;
 	
@@ -106,6 +115,9 @@ public class LCServiceImpl implements LCService {
 	QuotationService quotationService;
 	
 	@Autowired
+	CurrencyConverterService currencyService;
+	
+	@Autowired
 	EntityManagerFactory em;
 
 	@Override
@@ -122,6 +134,8 @@ public class LCServiceImpl implements LCService {
 		nimailc.setlCIssuanceCountry(nimailcbean.getlCIssuanceCountry());
 		nimailc.setlCIssuingDate(nimailcbean.getlCIssuingDate());
 		nimailc.setlCExpiryDate(nimailcbean.getlCExpiryDate());
+		nimailc.setClaimExpiryDate(nimailcbean.getClaimExpiryDate());
+		nimailc.setBgType(nimailcbean.getBgType());
 		nimailc.setlCValue(nimailcbean.getlCValue());
 		nimailc.setlCCurrency(nimailcbean.getlCCurrency());
 		nimailc.setLastShipmentDate(nimailcbean.getLastShipmentDate());
@@ -172,7 +186,7 @@ public class LCServiceImpl implements LCService {
 		nimailc.setFinancingPeriod(nimailcbean.getFinancingPeriod());
 		nimailc.setLcProForma(nimailcbean.getLcProForma());
 		nimailc.setTenorFile(nimailcbean.getTenorFile());
-
+		nimailc.setIsESGComplaint(nimailcbean.getIsESGComplaint());
 		lcrepo.save(nimailc);
 
 	}
@@ -398,6 +412,9 @@ public class LCServiceImpl implements LCService {
 		case "Banker":
 			str = "BAAC";
 			break;
+		case "BankGuarantee":
+			str = "BAGU";
+			break;
 		}
 		return str;
 	}
@@ -501,7 +518,15 @@ public class LCServiceImpl implements LCService {
 
 	@Override
 	public void saveLCMasterdetails(NimaiLCMasterBean nimailcbean, String tid) {
-		int quoteReceived=lcmasterrepo.getTotalQuoteReceived(tid);
+		int quoteReceived;
+		try
+		{
+			quoteReceived=lcmasterrepo.getTotalQuoteReceived(tid);
+		}
+		catch(Exception e)
+		{
+			quoteReceived=0;
+		}
 		System.out.println("Quote Received: "+quoteReceived);
 		if(quoteReceived>=0)
 		{
@@ -518,6 +543,8 @@ public class LCServiceImpl implements LCService {
 		nimailc.setlCIssuanceCountry(nimailcbean.getlCIssuanceCountry());
 		nimailc.setlCIssuingDate(nimailcbean.getlCIssuingDate());
 		nimailc.setlCExpiryDate(nimailcbean.getlCExpiryDate());
+		nimailc.setClaimExpiryDate(nimailcbean.getClaimExpiryDate());
+		nimailc.setBgType(nimailcbean.getBgType());
 		nimailc.setlCValue(nimailcbean.getlCValue());
 		nimailc.setlCCurrency(nimailcbean.getlCCurrency());
 		nimailc.setLastShipmentDate(nimailcbean.getLastShipmentDate());
@@ -549,7 +576,8 @@ public class LCServiceImpl implements LCService {
 		nimailc.setModifiedDate(nimailcbean.getModifiedDate());
 		nimailc.setModifiedBy(nimailcbean.getModifiedBy());
 		nimailc.setTransactionflag(nimailcbean.getTransactionFlag());
-		nimailc.setTransactionStatus(nimailcbean.getTransactionStatus());
+		//nimailc.setTransactionStatus(nimailcbean.getTransactionStatus());
+		nimailc.setTransactionStatus("Active");
 		nimailc.setBranchUserId(nimailcbean.getBranchUserId());
 		nimailc.setBranchUserEmail(nimailcbean.getBranchUserEmail());
 		nimailc.setGoodsType(nimailcbean.getGoodsType());
@@ -570,10 +598,75 @@ public class LCServiceImpl implements LCService {
 		nimailc.setLcProForma(nimailcbean.getLcProForma());
 		nimailc.setTenorFile(nimailcbean.getTenorFile());
 		nimailc.setQuotationReceived(nimailcbean.getQuotationReceived());
-
+		nimailc.setIsESGComplaint(nimailcbean.getIsESGComplaint());
 		lcmasterrepo.save(nimailc);
 		
 		quoterepo.deleteQuoteByTrasanctionId(nimailc.getTransactionId(),nimailc.getUserId());
+		
+		NimaiLCMaster drafDet = lcmasterrepo.findByTransactionIdUserId(nimailc.getTransactionId(),nimailc.getUserId());
+		
+		NimaiLCMaster nlc=convertAndUpdateStatus(drafDet);
+		
+	}
+
+	private NimaiLCMaster convertAndUpdateStatus(NimaiLCMaster drafDet) {
+		// TODO Auto-generated method stub
+		NimaiLCMaster lcDetails=null;
+		String currency = drafDet.getlCCurrency();
+		Double lcValue = drafDet.getlCValue();
+		
+		String appId=systemConfig.findappID();
+		System.out.println("=======AppId"+appId);
+		String currencyConversionUrl=systemConfig.finCurrencyConverionUrl();
+		System.out.println("=======currencyConversionUrl"+currencyConversionUrl);
+		AESUtil util=new AESUtil();
+		String decryPtId=util.decrypt(appId);
+
+		Double value =Double.valueOf(systemConfig.find5mnAmount());
+		//Double value = (double) 5000000;
+		if (lcValue >= value && currency.equalsIgnoreCase("USD")) {
+			lcDetails=lcmasterrepo.getOne(drafDet.getTransactionId());
+			lcDetails.setTransactionStatus("Pending");
+			lcmasterrepo.save(lcDetails);
+			
+		} else if (!currency.equalsIgnoreCase("USD")) {
+			System.out.println("Currency is not USD");
+			Double rates=0.0;
+			try {
+				rates = currencyService.sendHttpGetRequest(currency, "USD",decryPtId,currencyConversionUrl);
+				System.out.println("Rates: "+rates);
+			} catch (IOException e) {
+				lcDetails=lcmasterrepo.getOne(drafDet.getTransactionId());
+				lcDetails.setTransactionStatus("Pending");
+				lcmasterrepo.save(lcDetails);
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (JSONException e) {
+				lcDetails=lcmasterrepo.getOne(drafDet.getTransactionId());
+				lcDetails.setTransactionStatus("Pending");
+				lcmasterrepo.save(lcDetails);
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if (rates == null) {
+				lcDetails=lcmasterrepo.getOne(drafDet.getTransactionId());
+				lcDetails.setTransactionStatus("Pending");
+				lcmasterrepo.save(lcDetails);
+			} else {
+				System.out.println("Rates is not null");
+				Double usdConversionlcValue = lcValue / rates;
+				System.out.println("usdConversionlcValue="+usdConversionlcValue);
+				System.out.println("value="+value);
+				if (usdConversionlcValue >= value) {
+					System.out.println("Converted value is greater/= value");
+					lcDetails=lcmasterrepo.getOne(drafDet.getTransactionId());
+					lcDetails.setTransactionStatus("Pending");
+					lcmasterrepo.save(lcDetails);
+				}
+			}
+
+		}
+		return lcDetails;
 	}
 
 	@Override
@@ -590,6 +683,8 @@ public class LCServiceImpl implements LCService {
 		nimailc.setlCIssuanceCountry(nimailcbean.getlCIssuanceCountry());
 		nimailc.setlCIssuingDate(nimailcbean.getlCIssuingDate());
 		nimailc.setlCExpiryDate(nimailcbean.getlCExpiryDate());
+		nimailc.setClaimExpiryDate(nimailcbean.getClaimExpiryDate());
+		nimailc.setBgType(nimailcbean.getBgType());
 		nimailc.setlCValue(nimailcbean.getlCValue());
 		nimailc.setlCCurrency(nimailcbean.getlCCurrency());
 		nimailc.setLastShipmentDate(nimailcbean.getLastShipmentDate());
@@ -641,7 +736,7 @@ public class LCServiceImpl implements LCService {
 		nimailc.setFinancingPeriod(nimailcbean.getFinancingPeriod());
 		nimailc.setLcProForma(nimailcbean.getLcProForma());
 		nimailc.setTenorFile(nimailcbean.getTenorFile());
-
+		nimailc.setIsESGComplaint(nimailcbean.getIsESGComplaint());
 		lcrepo.save(nimailc);
 
 		
@@ -1005,19 +1100,31 @@ public class LCServiceImpl implements LCService {
 		{
 			if(userId==null || userId=="")
 			{
+				List<CustomerTransactionBean> details;
 				System.out.println("UserId: "+userId);
-				List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatusBranchEmailOnly(branchEmailId);
+				if(status.equalsIgnoreCase("Pending"))
+					details = lcmasterrepo.findPendingTransactionForCustByUserIdAndAcceptedClosedStatusBranchEmailOnly(branchEmailId);
+				else
+					details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatusBranchEmailOnly(branchEmailId);
 				List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 				return finalList;
 			}
 			if (userId.substring(0, 2).equalsIgnoreCase("BC") == true) {
 				if (branchEmailId.equals(lcmasterrepo.getEmailAddress(userId))) {
+					List<CustomerTransactionBean> details;
 					System.out.println("Bank as a customer");
-					List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatus(userId);
+					if(status.equalsIgnoreCase("Pending"))
+						details = lcmasterrepo.findPendingTransactionForCustByUserIdAndAcceptedClosedStatus(userId);
+					else
+						details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatus(userId);
 					List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 					return finalList;
 				} else {
-					List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatusBranchEmail(userId, branchEmailId);
+					List<CustomerTransactionBean> details;
+					if(status.equalsIgnoreCase("Pending"))
+						details = lcmasterrepo.findPendingTransactionForCustByUserIdAndAcceptedClosedStatusBranchEmail(userId, branchEmailId);
+					else
+						details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatusBranchEmail(userId, branchEmailId);
 					List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 					return finalList;
 					}
@@ -1027,20 +1134,32 @@ public class LCServiceImpl implements LCService {
 					if(userId.substring(0, 2).equalsIgnoreCase("Al"))
 					{
 						System.out.println("Removing All from userid: "+userId.replaceFirst("All", ""));
-						List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdSubsIdAndAcceptedClosedStatus(userId.replaceFirst("All", ""));
+						List<CustomerTransactionBean> details;
+						if(status.equalsIgnoreCase("Pending"))
+							details = lcmasterrepo.findPendingTransactionForCustByUserIdSubsIdAndAcceptedClosedStatus(userId.replaceFirst("All", ""));
+						else
+							details = lcmasterrepo.findTransactionForCustByUserIdSubsIdAndAcceptedClosedStatus(userId.replaceFirst("All", ""));
 						List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 						return finalList;
 					}
 					else
 					{
-						List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatus(userId);
+						List<CustomerTransactionBean> details;
+						if(status.equalsIgnoreCase("Pending"))
+							details = lcmasterrepo.findPendingTransactionForCustByUserIdAndAcceptedClosedStatus(userId);
+						else
+							details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatus(userId);
 						List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 						return finalList;
 					}
 				}
 				else
 				{
-					List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatusBranchEmailOnly(branchEmailId);
+					List<CustomerTransactionBean> details;
+					if(status.equalsIgnoreCase("Pending"))
+						details = lcmasterrepo.findPendingTransactionForCustByUserIdAndAcceptedClosedStatusBranchEmailOnly(branchEmailId);
+					else
+						details = lcmasterrepo.findTransactionForCustByUserIdAndAcceptedClosedStatusBranchEmailOnly(branchEmailId);
 					List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 					return finalList;
 				}
@@ -1051,18 +1170,30 @@ public class LCServiceImpl implements LCService {
 			if(userId==null || userId=="")
 			{
 				System.out.println("UserId: "+userId);
-				List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByStatusBranchEmail(status,branchEmailId);
+				List<CustomerTransactionBean> details;
+				if(status.equalsIgnoreCase("Pending"))
+					details = lcmasterrepo.findPendingTransactionForCustByStatusBranchEmail(status,branchEmailId);
+				else
+					details = lcmasterrepo.findTransactionForCustByStatusBranchEmail(status,branchEmailId);
 				List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 				return finalList;
 			}
 			if (userId.substring(0, 2).equalsIgnoreCase("BC") == true) {
 				if (branchEmailId.equals(lcmasterrepo.getEmailAddress(userId)) || branchEmailId.equalsIgnoreCase("All")) {
 					System.out.println("Bank as a customer");
-					List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdAndStatus(userId, status);
+					List<CustomerTransactionBean> details;
+					if(status.equalsIgnoreCase("Pending"))
+						details = lcmasterrepo.findPendingTransactionForCustByUserIdAndStatus(userId, status);
+					else
+						details = lcmasterrepo.findTransactionForCustByUserIdAndStatus(userId, status);
 					List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 					return finalList;
 				} else {
-					List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdStatusBranchEmail(userId, status, branchEmailId);
+					List<CustomerTransactionBean> details;
+					if(status.equalsIgnoreCase("Pending"))
+						details = lcmasterrepo.findPendingTransactionForCustByUserIdStatusBranchEmail(userId, status, branchEmailId);
+					else
+						details = lcmasterrepo.findTransactionForCustByUserIdStatusBranchEmail(userId, status, branchEmailId);
 					List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 					return finalList;
 				}
@@ -1070,14 +1201,22 @@ public class LCServiceImpl implements LCService {
 				if(!userId.substring(0, 2).equalsIgnoreCase("Al"))
 				{
 					System.out.println("Removing All from userid: "+userId.replaceFirst("All", ""));
-					List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdAndStatusExpAll(userId.replaceFirst("All", ""), status);
+					List<CustomerTransactionBean> details;
+					if(status.equalsIgnoreCase("Pending"))
+						details = lcmasterrepo.findPendingTransactionForCustByUserIdAndStatusExpAll(userId.replaceFirst("All", ""), status);
+					else
+						details = lcmasterrepo.findTransactionForCustByUserIdAndStatusExpAll(userId.replaceFirst("All", ""), status);
 					List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 					return finalList;
 				}
 				if(userId.substring(0, 2).equalsIgnoreCase("Al"))
 				{
 					System.out.println("Removing All from userid: "+userId.replaceFirst("All", ""));
-					List<CustomerTransactionBean> details = lcmasterrepo.findTransactionForCustByUserIdAndStatus(userId.replaceFirst("All", ""), status);
+					List<CustomerTransactionBean> details;
+					if(status.equalsIgnoreCase("Pending"))
+						details = lcmasterrepo.findPendingTransactionForCustByUserIdAndStatus(userId.replaceFirst("All", ""), status);
+					else
+						details = lcmasterrepo.findTransactionForCustByUserIdAndStatus(userId.replaceFirst("All", ""), status);
 					List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 					return finalList;
 				}
@@ -1093,7 +1232,10 @@ public class LCServiceImpl implements LCService {
 					String user=nc.getUserid();
 					subsidiaryList.add(user);
 				}
-				details = lcmasterrepo.findTransactionForCustByUserIdListAndStatus(subsidiaryList, status);
+				if(status.equalsIgnoreCase("Pending"))
+					details = lcmasterrepo.findPendingTransactionForCustByUserIdListAndStatus(subsidiaryList, status);
+				else
+					details = lcmasterrepo.findTransactionForCustByUserIdListAndStatus(subsidiaryList, status);
 				List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 				System.out.println(""+finalList);
 				return finalList;
@@ -1229,6 +1371,9 @@ public class LCServiceImpl implements LCService {
 				break;
 			case "Refinance":
 				tenor=Integer.valueOf(lcmasterrepo.getRefinancingPeriod(transId));
+				break;
+			case "BankGuarantee":
+				tenor=Integer.valueOf(lcmasterrepo.getConfirmationPeriod(transId));
 				break;
 			}
 		}
@@ -2460,10 +2605,12 @@ public class LCServiceImpl implements LCService {
 						Double lcValue=lcservice.getLCValue(transId);
 						lcservice.insertDataForSavingInput(lcCountry,lcCurrency,lcValue,);*/
 					
+						NimaiLCMaster drafDet = lcmasterrepo.findByTransactionIdUserId(transId, userId);
 						
-						
+						NimaiLCMaster lcDetails1=convertAndUpdateStatus(drafDet);
 						getAlleligibleBAnksEmail(userId, transId,0,"LC_UPLOAD_ALERT_ToBanks","LC_UPLOAD(DATA)");
 						response.setStatus("Success");
+						response.setErrCode(lcDetails1.getTransactionStatus());
 						response.setData(sts);
 						return new ResponseEntity<Object>(response, HttpStatus.OK);
 					}

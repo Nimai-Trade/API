@@ -20,6 +20,9 @@ public class NimaiLCBean implements Serializable {
 	private Date lCIssuingDate;
 	@JsonFormat(pattern = "yyyy-MM-dd")
 	private Date lCExpiryDate;
+	@JsonFormat(pattern = "yyyy-MM-dd")
+	private Date claimExpiryDate;
+	private String bgType;
 	private Double lCValue;
 	private String lCCurrency;
 	@JsonFormat(pattern = "yyyy-MM-dd")
@@ -43,9 +46,16 @@ public class NimaiLCBean implements Serializable {
 	private String chargesType;
 	private Date validity;
 	private Integer confirmedFlag;
+	private String isESGComplaint;
 	
 	
 	
+	public String getIsESGComplaint() {
+		return isESGComplaint;
+	}
+	public void setIsESGComplaint(String isESGComplaint) {
+		this.isESGComplaint = isESGComplaint;
+	}
 	public Integer getConfirmedFlag() {
 		return confirmedFlag;
 	}
@@ -65,6 +75,18 @@ public class NimaiLCBean implements Serializable {
 	
 	
 	
+	public Date getClaimExpiryDate() {
+		return claimExpiryDate;
+	}
+	public void setClaimExpiryDate(Date claimExpiryDate) {
+		this.claimExpiryDate = claimExpiryDate;
+	}
+	public String getBgType() {
+		return bgType;
+	}
+	public void setBgType(String bgType) {
+		this.bgType = bgType;
+	}
 	/*public String getOldTransactionId() {
 		return OldTransactionId;
 	}

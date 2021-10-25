@@ -443,7 +443,7 @@ public class QuotationController
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		} else {
 			response.setData(quotations);
-			response.setStatus("confChgsNegot:"+getData.get("confChgsNegot")+", confChgsMatur:"+getData.get("confChgsMatur"));
+			response.setStatus("confChgsNegot:"+getData.get("confChgsNegot")+", confChgsMatur:"+getData.get("confChgsMatur")+", confChgsExp:"+getData.get("confChgsExp")+", confChgsClaimExp:"+getData.get("confChgsClaimExp"));
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
 	}
@@ -737,7 +737,7 @@ public class QuotationController
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		} else {
 			response.setData(quotations);
-			response.setStatus("confChgsNegot:"+getData.get("confChgsNegot")+", confChgsMatur:"+getData.get("confChgsMatur"));
+			response.setStatus("confChgsNegot:"+getData.get("confChgsNegot")+", confChgsMatur:"+getData.get("confChgsMatur")+", confChgsExp:"+getData.get("confChgsExp")+", confChgsClaimExp:"+getData.get("confChgsClaimExp"));
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
 	}
@@ -837,7 +837,7 @@ public class QuotationController
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		} else {
 			response.setData(quotations);
-			response.setStatus("confChgsNegot:"+getData.get("confChgsNegot")+", confChgsMatur:"+getData.get("confChgsMatur"));
+			response.setStatus("confChgsNegot:"+getData.get("confChgsNegot")+", confChgsMatur:"+getData.get("confChgsMatur")+", confChgsExp:"+getData.get("confChgsExp")+", confChgsClaimExp:"+getData.get("confChgsClaimExp"));
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
 	}

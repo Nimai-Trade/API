@@ -67,6 +67,13 @@ public class NimaiLCMaster
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date lCExpiryDate;
 	
+	@Column(name="CLAIM_EXPIRY_DATE")
+	@Temporal(value=TemporalType.TIMESTAMP)
+	private Date claimExpiryDate;
+	
+	@Column(name="BG_TYPE")
+	private String bgType;
+	
 	@Column(name="LC_VALUE")
 	private Double lCValue;
 	
@@ -241,7 +248,38 @@ public class NimaiLCMaster
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date rejectedOn;
 	
+	@Column(name="transaction_rejected_by")
+	private String rejectedBy;
 	
+	@Column(name="is_esg_complaint")
+	private String isESGComplaint;
+	
+	
+	
+	public String getIsESGComplaint() {
+		return isESGComplaint;
+	}
+	public void setIsESGComplaint(String isESGComplaint) {
+		this.isESGComplaint = isESGComplaint;
+	}
+	public String getRejectedBy() {
+		return rejectedBy;
+	}
+	public void setRejectedBy(String rejectedBy) {
+		this.rejectedBy = rejectedBy;
+	}
+	public Date getClaimExpiryDate() {
+		return claimExpiryDate;
+	}
+	public void setClaimExpiryDate(Date claimExpiryDate) {
+		this.claimExpiryDate = claimExpiryDate;
+	}
+	public String getBgType() {
+		return bgType;
+	}
+	public void setBgType(String bgType) {
+		this.bgType = bgType;
+	}
 	public Date getAcceptedOn() {
 		return acceptedOn;
 	}

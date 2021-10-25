@@ -4,6 +4,8 @@ import java.util.Date;
 
 import javax.persistence.Column;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 public class TransactionQuotationBean {
 	private String transactionId;
 	private String userId;
@@ -19,6 +21,8 @@ public class TransactionQuotationBean {
 	private String goodsType;
 	private Date negotiationDate;
 	private Date lCExpiryDate;
+	private Date claimExpiryDate;
+	private String bgType;
 	private Integer usanceDays;
 	private String paymentTerms;
 	private Date startDate;
@@ -64,8 +68,9 @@ public class TransactionQuotationBean {
 
 	private Float confirmationCharges;
 	private String confChgsIssuanceToNegot;
-	private String confChgsIssuanceToExp;
+	private String confChgsIssuanceToexp;
 	private String confChgsIssuanceToMatur;
+	private String confChgsIssuanceToClaimExp;
 	private Float discountingCharges;
 	private Float refinancingCharges;
 	private Float bankerAcceptCharges;
@@ -92,9 +97,42 @@ public class TransactionQuotationBean {
 	private String quoteDaysCountdown;
 	private Date expiredOn;
 	private String rejectedReason;
+	private String isESGComplaint;
 	
 	
 	
+	public String getIsESGComplaint() {
+		return isESGComplaint;
+	}
+
+	public void setIsESGComplaint(String isESGComplaint) {
+		this.isESGComplaint = isESGComplaint;
+	}
+
+	public Date getClaimExpiryDate() {
+		return claimExpiryDate;
+	}
+
+	public void setClaimExpiryDate(Date claimExpiryDate) {
+		this.claimExpiryDate = claimExpiryDate;
+	}
+
+	public String getBgType() {
+		return bgType;
+	}
+
+	public void setBgType(String bgType) {
+		this.bgType = bgType;
+	}
+
+	public String getConfChgsIssuanceToClaimExp() {
+		return confChgsIssuanceToClaimExp;
+	}
+
+	public void setConfChgsIssuanceToClaimExp(String confChgsIssuanceToClaimExp) {
+		this.confChgsIssuanceToClaimExp = confChgsIssuanceToClaimExp;
+	}
+
 	public String getTenorFile() {
 		return tenorFile;
 	}
@@ -343,12 +381,12 @@ public class TransactionQuotationBean {
 		this.confChgsIssuanceToNegot = confChgsIssuanceToNegot;
 	}
 
-	public String getConfChgsIssuanceToExp() {
-		return confChgsIssuanceToExp;
+	public String getConfChgsIssuanceToexp() {
+		return confChgsIssuanceToexp;
 	}
 
-	public void setConfChgsIssuanceToExp(String confChgsIssuanceToExp) {
-		this.confChgsIssuanceToExp = confChgsIssuanceToExp;
+	public void setConfChgsIssuanceToexp(String confChgsIssuanceToexp) {
+		this.confChgsIssuanceToexp = confChgsIssuanceToexp;
 	}
 
 	public String getConfChgsIssuanceToMatur() {

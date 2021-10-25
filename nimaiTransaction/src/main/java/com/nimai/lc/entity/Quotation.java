@@ -48,6 +48,9 @@ public class Quotation
 	@Column(name="CONF_CHGS_ISSUANCE_TO_MATUR")
 	private String confChgsIssuanceToMatur;
 	
+	@Column(name="CONF_CHGS_ISSUANCE_TO_CLAIM_EXP")
+	private String confChgsIssuanceToClaimExp;
+	
 	@Column(name="DISCOUNTING_CHARGES")
 	private Float discountingCharges;
 	
@@ -139,6 +142,14 @@ public class Quotation
 	
 	
 	
+	public String getConfChgsIssuanceToClaimExp() {
+		return confChgsIssuanceToClaimExp;
+	}
+
+	public void setConfChgsIssuanceToClaimExp(String confChgsIssuanceToClaimExp) {
+		this.confChgsIssuanceToClaimExp = confChgsIssuanceToClaimExp;
+	}
+
 	public Integer getIsDeleted() {
 		return isDeleted;
 	}

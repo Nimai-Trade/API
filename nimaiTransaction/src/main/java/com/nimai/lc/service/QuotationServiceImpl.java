@@ -90,6 +90,7 @@ public class QuotationServiceImpl implements QuotationService {
 		quote.setConfChgsIssuanceToNegot(quotationbean.getConfChgsIssuanceToNegot());
 		quote.setConfChgsIssuanceToexp(quotationbean.getConfChgsIssuanceToexp());
 		quote.setConfChgsIssuanceToMatur(quotationbean.getConfChgsIssuanceToMatur());
+		quote.setConfChgsIssuanceToClaimExp(quotationbean.getConfChgsIssuanceToClaimExp());
 		quote.setDiscountingCharges(quotationbean.getDiscountingCharges());
 		quote.setBankAcceptCharges(quotationbean.getBankAcceptCharges());
 		quote.setRefinancingCharges(quotationbean.getRefinancingCharges());
@@ -178,8 +179,11 @@ public class QuotationServiceImpl implements QuotationService {
 		storedProcedure.registerStoredProcedureParameter("negoDays", Integer.class, ParameterMode.OUT);
 		storedProcedure.registerStoredProcedureParameter("expDays", Integer.class, ParameterMode.OUT);
 		storedProcedure.registerStoredProcedureParameter("matDays", Integer.class, ParameterMode.OUT);
+		storedProcedure.registerStoredProcedureParameter("expClaimDays", Integer.class, ParameterMode.OUT);
 		storedProcedure.registerStoredProcedureParameter("confChgsNegot", Float.class, ParameterMode.OUT);
 		storedProcedure.registerStoredProcedureParameter("confChgsMatur", Float.class, ParameterMode.OUT);
+		storedProcedure.registerStoredProcedureParameter("confChgsExp", Float.class, ParameterMode.OUT);
+		storedProcedure.registerStoredProcedureParameter("confChgsClaimExp", Float.class, ParameterMode.OUT);
 		storedProcedure.registerStoredProcedureParameter("sumOfQuote", Integer.class, ParameterMode.OUT);
 		storedProcedure.registerStoredProcedureParameter("totalQuote", Integer.class, ParameterMode.OUT);
 		storedProcedure.setParameter("inp_quotation_id", quotationId);
@@ -191,19 +195,25 @@ public class QuotationServiceImpl implements QuotationService {
 		int negoDays = (int) storedProcedure.getOutputParameterValue("negoDays");
 		int expDays = (int) storedProcedure.getOutputParameterValue("expDays");
 		int matDays = (int) storedProcedure.getOutputParameterValue("matDays");
+		int expClaimDays = (int) storedProcedure.getOutputParameterValue("expClaimDays");
 		float confChgsNegot = (float) storedProcedure.getOutputParameterValue("confChgsNegot");
 		float confChgsMatur = (float) storedProcedure.getOutputParameterValue("confChgsMatur");
+		float confChgsExp = (float) storedProcedure.getOutputParameterValue("confChgsExp");
+		float confChgsClaimExp = (float) storedProcedure.getOutputParameterValue("confChgsClaimExp");
 		int sumOfQuote = (int) storedProcedure.getOutputParameterValue("sumOfQuote");
 		int totalQuote = (int) storedProcedure.getOutputParameterValue("totalQuote");
 
-		System.out.println(negoDays + " " + expDays + " " + matDays + " " + sumOfQuote + " " + totalQuote);
+		System.out.println(negoDays + " " + expDays + " " + matDays + " " + expClaimDays + " " + sumOfQuote + " " + totalQuote);
 		HashMap outputData = new HashMap();
 
 		outputData.put("negotiationDays", negoDays);
 		outputData.put("expiryDays", expDays);
 		outputData.put("maturityDays", matDays);
+		outputData.put("claimExpDays", expClaimDays);
 		outputData.put("confChgsNegot", confChgsNegot);
 		outputData.put("confChgsMatur", confChgsMatur);
+		outputData.put("confChgsExp", confChgsExp);
+		outputData.put("confChgsClaimExp", confChgsClaimExp);
 		outputData.put("sumOfQuote", sumOfQuote);
 		outputData.put("TotalQuote", totalQuote);
 		
@@ -265,6 +275,7 @@ public class QuotationServiceImpl implements QuotationService {
 		quote.setConfChgsIssuanceToNegot(quotationbean.getConfChgsIssuanceToNegot());
 		quote.setConfChgsIssuanceToexp(quotationbean.getConfChgsIssuanceToexp());
 		quote.setConfChgsIssuanceToMatur(quotationbean.getConfChgsIssuanceToMatur());
+		quote.setConfChgsIssuanceToClaimExp(quotationbean.getConfChgsIssuanceToClaimExp());
 		quote.setDiscountingCharges(quotationbean.getDiscountingCharges());
 		quote.setBankAcceptCharges(quotationbean.getBankAcceptCharges());
 		quote.setRefinancingCharges(quotationbean.getRefinancingCharges());
@@ -336,6 +347,7 @@ public class QuotationServiceImpl implements QuotationService {
 		quote.setConfChgsIssuanceToNegot(quotationbean.getConfChgsIssuanceToNegot());
 		quote.setConfChgsIssuanceToexp(quotationbean.getConfChgsIssuanceToexp());
 		quote.setConfChgsIssuanceToMatur(quotationbean.getConfChgsIssuanceToMatur());
+		quote.setConfChgsIssuanceToClaimExp(quotationbean.getConfChgsIssuanceToClaimExp());
 		quote.setDiscountingCharges(quotationbean.getDiscountingCharges());
 		quote.setBankAcceptCharges(quotationbean.getBankAcceptCharges());
 		quote.setRefinancingCharges(quotationbean.getRefinancingCharges());
@@ -619,7 +631,7 @@ public class QuotationServiceImpl implements QuotationService {
 			responseBean.setBankUserId(((Object[])objA)[53]==null?"null":((Object[])objA)[53].toString());
 			responseBean.setConfirmationCharges(((Object[])objA)[54]==null?0:Float.valueOf(((Object[])objA)[54].toString()));
 			responseBean.setConfChgsIssuanceToNegot(((Object[])objA)[55]==null?"null":((Object[])objA)[55].toString());
-			responseBean.setConfChgsIssuanceToExp(((Object[])objA)[56]==null?"null":((Object[])objA)[56].toString());
+			responseBean.setConfChgsIssuanceToexp(((Object[])objA)[56]==null?"null":((Object[])objA)[56].toString());
 			responseBean.setConfChgsIssuanceToMatur(((Object[])objA)[57]==null?"null":((Object[])objA)[57].toString());
 			responseBean.setDiscountingCharges(((Object[])objA)[58]==null?0:Float.valueOf(((Object[])objA)[58].toString()));
 			responseBean.setRefinancingCharges(((Object[])objA)[59]==null?0:Float.valueOf(((Object[])objA)[59].toString()));
@@ -699,7 +711,10 @@ public class QuotationServiceImpl implements QuotationService {
 			responseBean.setExpiredOn(((Object[])objA)[78]==null?new Date(0):(Date)simpleDateFormat.parse(((Object[])objA)[78].toString()));
 			responseBean.setRejectedReason(((Object[])objA)[79]==null?"null":((Object[])objA)[79].toString());
 			responseBean.setTenorFile(((Object[])objA)[80]==null?"null":((Object[])objA)[80].toString());
-			
+			responseBean.setConfChgsIssuanceToClaimExp(((Object[])objA)[81]==null?"null":((Object[])objA)[81].toString());
+			responseBean.setClaimExpiryDate(((Object[])objA)[82]==null?new Date(0):(Date)simpleDateFormat.parse(((Object[])objA)[82].toString()));
+			responseBean.setBgType(((Object[])objA)[83]==null?"null":((Object[])objA)[83].toString());
+			responseBean.setIsESGComplaint(((Object[])objA)[84]==null?"null":((Object[])objA)[84].toString());
 			list1.add(responseBean);
 		}
 		return list1;

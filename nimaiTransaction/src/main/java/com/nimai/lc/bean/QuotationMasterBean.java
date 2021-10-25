@@ -17,6 +17,7 @@ public class QuotationMasterBean implements Serializable
 	private String confChgsIssuanceToNegot;
 	private String confChgsIssuanceToexp;
 	private String confChgsIssuanceToMatur;
+	private String confChgsIssuanceToClaimExp;
 	private Float discountingCharges;
     private Float refinancingCharges;
 	private Float bankAcceptCharges;
@@ -54,6 +55,12 @@ public class QuotationMasterBean implements Serializable
 	
 	
 	
+	public String getConfChgsIssuanceToClaimExp() {
+		return confChgsIssuanceToClaimExp;
+	}
+	public void setConfChgsIssuanceToClaimExp(String confChgsIssuanceToClaimExp) {
+		this.confChgsIssuanceToClaimExp = confChgsIssuanceToClaimExp;
+	}
 	public String getTermConditionComments() {
 		return termConditionComments;
 	}

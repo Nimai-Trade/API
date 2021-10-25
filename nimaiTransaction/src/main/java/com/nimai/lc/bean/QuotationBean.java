@@ -3,6 +3,8 @@ package com.nimai.lc.bean;
 import java.io.Serializable;
 import java.util.Date;
 
+import javax.persistence.Column;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class QuotationBean implements Serializable
@@ -17,6 +19,7 @@ public class QuotationBean implements Serializable
 	private String confChgsIssuanceToNegot;
 	private String confChgsIssuanceToexp;
 	private String confChgsIssuanceToMatur;
+	private String confChgsIssuanceToClaimExp;
 	private Float discountingCharges;
     private Float refinancingCharges;
 	private Float bankAcceptCharges;
@@ -52,6 +55,12 @@ public class QuotationBean implements Serializable
 	
 	
 	
+	public String getConfChgsIssuanceToClaimExp() {
+		return confChgsIssuanceToClaimExp;
+	}
+	public void setConfChgsIssuanceToClaimExp(String confChgsIssuanceToClaimExp) {
+		this.confChgsIssuanceToClaimExp = confChgsIssuanceToClaimExp;
+	}
 	public Integer getIsDeleted() {
 		return isDeleted;
 	}

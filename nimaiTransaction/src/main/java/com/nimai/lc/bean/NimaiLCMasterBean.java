@@ -3,6 +3,8 @@ package com.nimai.lc.bean;
 import java.io.Serializable;
 import java.util.Date;
 
+import javax.persistence.Column;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 public class NimaiLCMasterBean implements Serializable
@@ -20,6 +22,9 @@ public class NimaiLCMasterBean implements Serializable
 	private Date lCIssuingDate;
 	@JsonFormat(pattern = "yyyy-MM-dd")
 	private Date lCExpiryDate;
+	@JsonFormat(pattern = "yyyy-MM-dd")
+	private Date claimExpiryDate;
+	private String bgType;
 	private Double lCValue;
 	private String lCCurrency;
 	@JsonFormat(pattern = "yyyy-MM-dd")
@@ -85,8 +90,27 @@ public class NimaiLCMasterBean implements Serializable
 	private Date acceptedOn;
 	@JsonFormat(pattern = "yyyy-MM-dd")
 	private Date rejectedOn;
+	private String isESGComplaint;
 	
 	
+	public String getIsESGComplaint() {
+		return isESGComplaint;
+	}
+	public void setIsESGComplaint(String isESGComplaint) {
+		this.isESGComplaint = isESGComplaint;
+	}
+	public Date getClaimExpiryDate() {
+		return claimExpiryDate;
+	}
+	public void setClaimExpiryDate(Date claimExpiryDate) {
+		this.claimExpiryDate = claimExpiryDate;
+	}
+	public String getBgType() {
+		return bgType;
+	}
+	public void setBgType(String bgType) {
+		this.bgType = bgType;
+	}
 	public Date getRejectedOn() {
 		return rejectedOn;
 	}
