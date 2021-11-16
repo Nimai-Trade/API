@@ -61,6 +61,18 @@ public class NewRequestEntity
 	@Column(name="INSERTED_DATE")
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date insertedDate;
+	
+	@Column(name="IS_ESG_COMPLAINT")
+	private String isESGCompliant;
+	
+	
+	public String getIsESGCompliant() {
+		return isESGCompliant;
+	}
+
+	public void setIsESGCompliant(String isESGCompliant) {
+		this.isESGCompliant = isESGCompliant;
+	}
 
 	public String getTransactionId() {
 		return transactionId;

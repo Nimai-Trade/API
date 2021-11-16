@@ -254,8 +254,17 @@ public class NimaiLCMaster
 	@Column(name="is_esg_complaint")
 	private String isESGComplaint;
 	
+	@Column(name="usd_currency_value")
+	private Double usdValue;
 	
 	
+	
+	public Double getUsdValue() {
+		return usdValue;
+	}
+	public void setUsdValue(Double usdValue) {
+		this.usdValue = usdValue;
+	}
 	public String getIsESGComplaint() {
 		return isESGComplaint;
 	}
