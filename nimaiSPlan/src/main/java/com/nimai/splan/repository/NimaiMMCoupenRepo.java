@@ -83,6 +83,7 @@ public interface NimaiMMCoupenRepo extends JpaRepository<NimaiMMCoupen, String>
     List getDataByUserIdAndStatus(final String userId);
     
   //TIME(CONVERT_TZ(CURTIME(),'+00:00','+05:30'))
+    //DATE_ADD(CONVERT_TZ(SYSDATE(),'+00:00','+05:30'),INTERVAL 23 SECOND)
     @Query(value = "SELECT count(*) from nimai_m_discount nmd where nmd.COUPON_CODE=(:coupenCode) \n" + 
     		"and nmd.status='Active' \n" + 
     		"and \n" + 
@@ -90,7 +91,8 @@ public interface NimaiMMCoupenRepo extends JpaRepository<NimaiMMCoupen, String>
     		"when nmd.START_TIME is null then\n" + 
     		" nmd.START_DATE<=CURDATE()\n" + 
     		"when nmd.START_TIME is not null then\n" + 
-    		" STR_TO_DATE(CONCAT(nmd.START_DATE,' ',nmd.START_TIME),'%Y-%m-%d %H:%i:%s')<=DATE_ADD(CONVERT_TZ(SYSDATE(),'+00:00','+05:30'),INTERVAL 23 SECOND)" + 
+    		" STR_TO_DATE(CONCAT(nmd.START_DATE,' ',TIME_FORMAT(ADDTIME(STR_TO_DATE(CONCAT(nmd.START_DATE,\n" + 
+    		"' ',nmd.START_TIME),'%Y-%m-%d %H:%i:%s'),'05:30:00'),'%T')),'%Y-%m-%d %H:%i:%s')<=CONVERT_TZ(SYSDATE(),'+00:00','+05:30')" + 
     		"END ", nativeQuery = true)
     int getCountForValidCoupon(final String coupenCode);
 

@@ -193,6 +193,11 @@ public class RegisterServiceImpl implements RegisterUserService {
 		{
 			nc.setAccountSource(fieoRefId);
 			nc.setAccountType("REFER");
+			if(!nc.getEmailAddress().equalsIgnoreCase(nc.getEmailAddress1()))
+			{
+				detailRepository.updateReferEmailId(nc.getEmailAddress(), nc.getEmailAddress1());
+			}
+			nc.setEmailAddress1("");
 		}
 		nc.setInsertedDate(Calendar.getInstance().getTime());
 		nc.setModifiedDate(Calendar.getInstance().getTime());
