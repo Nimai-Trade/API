@@ -72,7 +72,21 @@ public class ModelMapper {
 		kycResponse.setTitle(kycDetails.getTitle());
 		kycResponse.setInsertedDate(kycDetails.getInsertedDate());
 		kycResponse.setModifiedDate(kycDetails.getModifiedDate());
-		kycResponse.setComment(kycDetails.getComment());
+		
+		String comment;
+		String editedComment;
+
+		if (kycDetails.getKycStatus().equalsIgnoreCase("Maker Rejected")
+				|| kycDetails.getKycStatus().equalsIgnoreCase("Maker Approved")) {
+			comment = kycDetails.getComment();
+			editedComment = comment.substring(0, comment.indexOf("-"));
+			kycResponse.setComment(editedComment);
+		} else {
+			comment = kycDetails.getCheckerComment();
+			editedComment = comment.substring(0, comment.indexOf("-"));
+			kycResponse.setComment(editedComment);
+		}
+		
 		return kycResponse;
 	}
 

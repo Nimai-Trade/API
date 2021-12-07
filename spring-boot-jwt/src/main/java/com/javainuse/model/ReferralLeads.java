@@ -98,6 +98,17 @@ public class ReferralLeads implements Serializable
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date modifiedDate;
 
+	@Column(name="json_body")
+	private String jsonBody;
+	
+	public String getJsonBody() {
+		return jsonBody;
+	}
+
+	public void setJsonBody(String jsonBody) {
+		this.jsonBody = jsonBody;
+	}
+
 	public Integer getLeadId() {
 		return leadId;
 	}

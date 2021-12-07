@@ -148,7 +148,7 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 			@Param("status") String status);
 	
 	 @Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where (user_id=(:userId) or user_id in (select nmc.userid from nimai_m_customer nmc \r\n" + 
-				"where nmc.account_source=(:userId))) and (transaction_status=(:status) or transaction_status like '%Approved')", nativeQuery = true)
+				"where nmc.account_source=(:userId))) and (transaction_status=(:status) or transaction_status like '%Approved' or transaction_status like 'Pending')", nativeQuery = true)
 		List findPendingTransactionForCustByUserIdAndStatus(@Param("userId") String userid,
 				@Param("status") String status);
 	 
@@ -156,7 +156,7 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 	List findTransactionForCustByUserIdAndStatusExpAll(@Param("userId") String userid,
 			@Param("status") String status);
 	
-	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where user_id=(:userId) and (transaction_status=(:status) or transaction_status like '%Approved')", nativeQuery = true)
+	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where user_id=(:userId) and (transaction_status=(:status) or transaction_status like '%Approved' or transaction_status like 'Pending')", nativeQuery = true)
 	List findPendingTransactionForCustByUserIdAndStatusExpAll(@Param("userId") String userid,
 			@Param("status") String status);
 	
@@ -164,7 +164,7 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 	List findTransactionForCustByUserIdListAndStatus(List subsidiaryList,
 			@Param("status") String status);
 	
-	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where user_id IN (:subsidiaryList) and (transaction_status=(:status) or transaction_status like '%Approved')", nativeQuery = true)
+	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where user_id IN (:subsidiaryList) and (transaction_status=(:status) or transaction_status like '%Approved' or transaction_status like 'Pending')", nativeQuery = true)
 	List findPendingTransactionForCustByUserIdListAndStatus(List subsidiaryList,
 			@Param("status") String status);
 	
@@ -172,7 +172,7 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 	List findTransactionForCustByUserIdStatusBranchEmail(@Param("userid") String userId,
 			@Param("status") String status, @Param("branchEmailId") String branchEmailId);
 
-	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where user_id=(:userid) and (transaction_status=(:status) or transaction_status like '%Approved') and branch_user_email=(:branchEmailId)", nativeQuery = true)
+	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where user_id=(:userid) and (transaction_status=(:status) or transaction_status like '%Approved' or transaction_status like 'Pending') and branch_user_email=(:branchEmailId)", nativeQuery = true)
 	List findPendingTransactionForCustByUserIdStatusBranchEmail(@Param("userid") String userId,
 			@Param("status") String status, @Param("branchEmailId") String branchEmailId);
 	
@@ -180,7 +180,7 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 	List findTransactionForCustByStatusBranchEmail(
 			@Param("status") String status, @Param("branchEmailId") String branchEmailId);
 	
-	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where (transaction_status=(:status) or transaction_status like '%Approved') and branch_user_email=(:branchEmailId)", nativeQuery = true)
+	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where (transaction_status=(:status) or transaction_status like '%Approved' or transaction_status like 'Pending') and branch_user_email=(:branchEmailId)", nativeQuery = true)
 	List findPendingTransactionForCustByStatusBranchEmail(
 			@Param("status") String status, @Param("branchEmailId") String branchEmailId);
 	

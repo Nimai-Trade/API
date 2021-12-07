@@ -443,7 +443,7 @@ public class LCController {
 
 			lcservice.moveToHistory(transId, userId);
 			lcservice.saveLCMasterdetails(nimailcbean, transId);
-			lcservice.getAlleligibleBAnksEmail(userId, transId, 0, "LC_UPDATE_ALERT_ToBanks", "LC_UPDATE(DATA)");
+			//lcservice.getAlleligibleBAnksEmail(userId, transId, 0, "LC_UPDATE_ALERT_ToBanks", "LC_UPDATE(DATA)");
 			response.setStatus("Success");
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		} catch (Exception e) {
@@ -876,6 +876,24 @@ public class LCController {
 			logger.info(e.getMessage());
 		}
 		return null;
+	}
+	
+	@CrossOrigin(value = "*", allowedHeaders = "*")
+	@RequestMapping(value = "/getGoodsData1", produces = "application/json", method = RequestMethod.GET)
+	public ResponseEntity<?> getGoods1()
+			throws ParseException {
+		logger.info("=========== Get Transactions By UserId and Status ===========");
+		GenericResponse response = new GenericResponse<>();
+		List<Goods> goodsList = lcservice.getGoodsList();
+		if (goodsList.isEmpty() || goodsList == null) {
+			response.setStatus("Failure");
+			response.setErrMessage("No Goods Available");
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		} else {
+			response.setData(goodsList);
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		}
+
 	}
 	
 	@CrossOrigin(value = "*", allowedHeaders = "*")

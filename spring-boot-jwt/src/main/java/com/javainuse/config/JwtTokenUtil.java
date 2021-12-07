@@ -133,7 +133,7 @@ public class JwtTokenUtil implements Serializable {
 		System.out.println("Mobile no: "+mobNo);
 		String emailID=body.get("pb_email").toString().toLowerCase();
 		ReferralLeads rl=new ReferralLeads();
-		ReferralLeads updateRl=refRepo.getRlDetails(emailID,mobNo);
+		ReferralLeads updateRl=refRepo.getRlDetails(emailID,mobNo,body.get("pb_organization").toString());
 		
 		if(updateRl==null ) {
 			rl.setpId(""+body.get("pb_p_id"));
@@ -162,6 +162,7 @@ public class JwtTokenUtil implements Serializable {
 			rl.setInsertedDate(d);
 			rl.setModifiedBy(""+body.get("pb_name"));
 			rl.setModifiedDate(d);
+			rl.setJsonBody(body.toString());
 			refRepo.save(rl);
 			saveReferData("save",rl);
 			return rl;
@@ -185,7 +186,7 @@ public class JwtTokenUtil implements Serializable {
 			updateRl.setCountry(""+body.get("pb_country").toString().toUpperCase());
 			updateRl.setPincode(""+body.get("pb_pincode"));
 			//rl.setMembershipStatus("Paid Member");
-			updateRl.setMembershipStatus(""+body.get("pb_membership_status"));
+			updateRl.setMembershipStatus(""+body.get("pb_membership"));
 			updateRl.setRedirectUrl(""+body.get("pb_redirecturl"));
 			updateRl.setIec(""+body.get("pb_iec"));
 			updateRl.setFax(""+body.get("pb_fax"));
@@ -194,6 +195,7 @@ public class JwtTokenUtil implements Serializable {
 			//updateRl.setInsertedDate(d);
 			updateRl.setModifiedBy(""+body.get("pb_name"));
 			updateRl.setModifiedDate(d);
+			updateRl.setJsonBody(body.toString());
 			refRepo.save(updateRl);
 			saveReferData("update",updateRl);
 			return updateRl;
@@ -213,7 +215,7 @@ public class JwtTokenUtil implements Serializable {
 		try {
 			ReferenceIdUniqueNumber refernceId = new ReferenceIdUniqueNumber();
 			NimaiCustomer cusdetails = cuRepo.getOne(rl.getReferBy());
-			Refer updateReferl=referRepo.getRefelDetails(rl.getEmailId(),rl.getMobileNo());
+			Refer updateReferl=referRepo.getRefelDetails(rl.getEmailId(),rl.getMobileNo(),rl.getOrgName());
 			//if(updateReferl==null) {
 			if(flag.equalsIgnoreCase("save")) {
 				String rid = refernceId.uniqueNumberReferenceId();

@@ -171,5 +171,7 @@ public interface LCService {
 
 	public List<ResponseEntity<Object>> saveTempLc(NimaiClient obtainUserId, NimaiLCBean nimailc);
 
+	public List<Goods> getGoodsList();
+
 	
 }
