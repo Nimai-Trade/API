@@ -194,6 +194,9 @@ public class NimaiCustomer implements Serializable {
 	private List<InterestedCountry> intrestedCountrList;
 
 	@OneToMany(mappedBy = "userId")
+	private List<BeneInterestedCountry> beneIntrestedCountrList;
+	
+	@OneToMany(mappedBy = "userId")
 	private List<BlackListedGoods> bgList;
 
 	@OneToMany(mappedBy = "userid")
@@ -655,6 +658,15 @@ public class NimaiCustomer implements Serializable {
 
 	public void setEmailAddress3(String emailAddress3) {
 		this.emailAddress3 = emailAddress3;
+	}
+
+		
+	public List<BeneInterestedCountry> getBeneIntrestedCountrList() {
+		return beneIntrestedCountrList;
+	}
+
+	public void setBeneIntrestedCountrList(List<BeneInterestedCountry> beneIntrestedCountrList) {
+		this.beneIntrestedCountrList = beneIntrestedCountrList;
 	}
 
 	@Override

@@ -18,10 +18,13 @@ import org.springframework.stereotype.Service;
 
 import com.nimai.ucm.bean.BranchUserListResponse;
 import com.nimai.ucm.bean.SubsidiaryListResponse;
+import com.nimai.ucm.bean.TermsAndPolicyBean;
 import com.nimai.ucm.bean.UserBranchBean;
 import com.nimai.ucm.entity.NimaiCustomer;
+import com.nimai.ucm.entity.TermsAndPolicy;
 import com.nimai.ucm.entity.UserBranchEntity;
 import com.nimai.ucm.repository.CustomerRepository;
+import com.nimai.ucm.repository.TermsAndPolicyRepo;
 import com.nimai.ucm.repository.UserBranchRepository;
 
 @Service
@@ -36,6 +39,9 @@ public class UserBranchServiceImpl implements UserBranchService {
 
 	@Autowired
 	private UserBranchRepository userBranchRepository;
+	
+	@Autowired
+	private TermsAndPolicyRepo termPolicyRepo;
 
 	@Override
 	public String saveUserBranchDetails(UserBranchBean branchUserBean, String userid) {
@@ -211,5 +217,20 @@ if(subList.size()==0) {
 		subSidiaryBean.add(0, addResponse);
 
 		return subSidiaryBean;
+	}
+	
+	@Override
+	public TermsAndPolicyBean getTermsAndPolicy()
+	{
+		TermsAndPolicy tp=termPolicyRepo.getTermsAndPolicyDetails();
+		TermsAndPolicyBean tpb=new TermsAndPolicyBean();
+		tpb.setId(tp.getId());
+		tpb.setVersion(tp.getVersion());
+		tpb.setTerms(tp.getTerms());
+		tpb.setPolicy(tp.getPolicy());
+		tpb.setCreatedDate(tp.getCreatedDate());
+		tpb.setStatus(tp.getStatus());
+		
+		return tpb;
 	}
 }

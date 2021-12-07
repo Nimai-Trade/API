@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 
 import com.nimai.ucm.entity.NimaiCustomer;
+import com.nimai.ucm.entity.TermsAndPolicy;
 
 @Repository
 public interface CustomerRepository  extends JpaRepository<NimaiCustomer , String>{
@@ -21,4 +22,7 @@ public interface CustomerRepository  extends JpaRepository<NimaiCustomer , Strin
 
 	@Query(value ="SELECT * FROM NIMAI_M_CUSTOMER nm WHERE nm.ACCOUNT_SOURCE =:userid AND nm.KYC_STATUS=:kycStatus" , nativeQuery = true)
 	List<NimaiCustomer> getSubUserList(@Param("userid")String userid,@Param("kycStatus")String kycStatus);
+
+
+	
 }

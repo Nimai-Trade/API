@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.nimai.ucm.bean.BeneficiaryInterestedCountryBean;
 import com.nimai.ucm.bean.BlackListedGoodsBean;
 import com.nimai.ucm.bean.BranchUserBean;
 import com.nimai.ucm.bean.BusinessDetailsBean;
@@ -24,6 +25,7 @@ import com.nimai.ucm.bean.NimaiCustomerBean;
 import com.nimai.ucm.bean.OwnerMasterBean;
 import com.nimai.ucm.bean.PersonalDetailsBean;
 import com.nimai.ucm.bean.StateResponce;
+import com.nimai.ucm.entity.BeneInterestedCountry;
 import com.nimai.ucm.entity.BlackListedGoods;
 import com.nimai.ucm.entity.BranchUser;
 import com.nimai.ucm.entity.InterestedCountry;
@@ -31,6 +33,7 @@ import com.nimai.ucm.entity.NimaiCustomer;
 import com.nimai.ucm.entity.NimaiLookupCountries;
 import com.nimai.ucm.entity.NimaiMLogin;
 import com.nimai.ucm.entity.OwnerMaster;
+import com.nimai.ucm.repository.BeneInterestedCountryRepository;
 import com.nimai.ucm.repository.BlackListedGoodsRepository;
 import com.nimai.ucm.repository.InterestedCountryRepository;
 import com.nimai.ucm.repository.LoginRepository;
@@ -62,6 +65,9 @@ public class RegisterServiceImpl implements RegisterUserService {
 
 	@Autowired
 	InterestedCountryRepository icr;
+	
+	@Autowired
+	BeneInterestedCountryRepository bicr;
 
 	@Autowired
 	ModelMapperUtil modelMapper;
@@ -242,6 +248,21 @@ public class RegisterServiceImpl implements RegisterUserService {
 					saveInterestedCountry(ic);
 				} else {
 					updateInterestedCountry(intCon);
+				}
+
+			}
+			
+			for (BeneficiaryInterestedCountryBean beneintCon : personDetailsBean.getBeneInterestedCountry()) {
+
+				if (beneintCon.getCountryID() == null) {
+					BeneInterestedCountry ic = new BeneInterestedCountry();
+					ic.setCountryName(beneintCon.getCountriesIntrested());
+					ic.setInsertedDate(Calendar.getInstance().getTime());
+					ic.setUserId(nc);
+					ic.setCountryCurrencyId(beneintCon.getCcid());
+					saveBeneInterestedCountry(ic);
+				} else {
+					updateBeneInterestedCountry(beneintCon);
 				}
 
 			}
@@ -526,6 +547,18 @@ public class RegisterServiceImpl implements RegisterUserService {
 					saveInterestedCountry(ic);
 				}
 			}
+			
+			bicr.deleteBeneInterestedCountryUserId(nc.getUserid());
+			for (BeneficiaryInterestedCountryBean bintCon : pdb.getBeneInterestedCountry()) {
+				if (bintCon.getCountryID() == null) {
+					BeneInterestedCountry bic = new BeneInterestedCountry();
+					bic.setCountryName(bintCon.getCountriesIntrested());
+					bic.setInsertedDate(Calendar.getInstance().getTime());
+					bic.setUserId(nc);
+					bic.setCountryCurrencyId(bintCon.getCcid());
+					saveBeneInterestedCountry(bic);
+				}
+			}
 			pdb.setMinLCValue(nc.getMinValueofLc());
 
 		}
@@ -542,6 +575,16 @@ public class RegisterServiceImpl implements RegisterUserService {
 				+ ic.getModifiedDate() + " User Id " + ic.getUserId());
 		icr.save(ic);
 	}
+	
+	@Override
+	public void saveBeneInterestedCountry(BeneInterestedCountry bic) {
+		// Changes From Sravan
+		LOGGER.info("Save Bene Interested Country method is invoked in RegisterServiceImpl class");
+		LOGGER.info(" Country Name " + bic.getCountryName() + " Country Currency Id " + bic.getCountryCurrencyId()
+				+ " Country Id " + bic.getCountryID() + " Inserted Date " + bic.getInsertedDate() + " Modified Date "
+				+ bic.getModifiedDate() + " User Id " + bic.getUserId());
+		bicr.save(bic);
+	}
 
 	@Override
 	public void saveBlackListedGoods(BlackListedGoods blg) {
@@ -555,6 +598,21 @@ public class RegisterServiceImpl implements RegisterUserService {
 
 	@Override
 	public void updateInterestedCountry(InterestedCountryBean icb) {
+		// Changes From Sravan
+		LOGGER.info("Update Interested Country method is invoked in RegisterServiceImpl class");
+		LOGGER.info(" Ccid " + icb.getCcid() + " Country Id " + icb.getCountryID());
+		InterestedCountry ic = icr.getOne(icb.getCountryID());
+		if (ic != null) {
+			ic.setCountryName(icb.getCountriesIntrested());
+			ic.setInsertedDate(Calendar.getInstance().getTime());
+			ic.setCountryCurrencyId(icb.getCcid());
+			icr.save(ic);
+		}
+
+	}
+	
+	@Override
+	public void updateBeneInterestedCountry(BeneficiaryInterestedCountryBean icb) {
 		// Changes From Sravan
 		LOGGER.info("Update Interested Country method is invoked in RegisterServiceImpl class");
 		LOGGER.info(" Ccid " + icb.getCcid() + " Country Id " + icb.getCountryID());

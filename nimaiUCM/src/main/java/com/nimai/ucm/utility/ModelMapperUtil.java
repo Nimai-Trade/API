@@ -11,6 +11,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.nimai.ucm.bean.BeneficiaryInterestedCountryBean;
 import com.nimai.ucm.bean.BlackListedGoodsBean;
 import com.nimai.ucm.bean.InterestedCountryBean;
 import com.nimai.ucm.bean.NimaiCustomerReferrerBean;
@@ -64,6 +65,13 @@ public class ModelMapperUtil extends ModelMapper {
 			ib.setCountryID(ict.getCountryID());
 			return ib;
 		}).collect(Collectors.toList());
+		List<BeneficiaryInterestedCountryBean> beneintrestedCountrList = nc.getBeneIntrestedCountrList().stream().map(bict -> {
+			BeneficiaryInterestedCountryBean bib = new BeneficiaryInterestedCountryBean();
+			bib.setCountriesIntrested(bict.getCountryName());
+			bib.setCcid(bict.getCountryCurrencyId());
+			bib.setCountryID(bict.getCountryID());
+			return bib;
+		}).collect(Collectors.toList());
 		List<BlackListedGoodsBean> bgList = nc.getBgList().stream().map(blg -> {
 			BlackListedGoodsBean blb = new BlackListedGoodsBean();
 			blb.setBlackListGoods(blg.getGoodsName());
@@ -74,7 +82,7 @@ public class ModelMapperUtil extends ModelMapper {
 
 		pdb.setInterestedCountry((intrestedCountrList.isEmpty()) ? null : intrestedCountrList);
 		pdb.setBlacklistedGoods((bgList.isEmpty()) ? null : bgList);
-
+		pdb.setBeneInterestedCountry((beneintrestedCountrList.isEmpty()) ? null : beneintrestedCountrList);
 		return pdb;
 	}
 

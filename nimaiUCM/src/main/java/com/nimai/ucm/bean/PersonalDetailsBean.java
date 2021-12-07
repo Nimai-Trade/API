@@ -49,7 +49,8 @@ public class PersonalDetailsBean implements Serializable {
 	
 	private List<InterestedCountryBean> interestedCountry;
 	private List<BlackListedGoodsBean> blacklistedGoods;
-
+	private List<BeneficiaryInterestedCountryBean> BeneInterestedCountry;
+	
 	private String account_type;
 	private String account_source;
 	private String account_status;
@@ -416,6 +417,15 @@ public void setOtherType(String otherType) {
 
 	public void setBlacklistedGoods(List<BlackListedGoodsBean> blacklistedGoods) {
 		this.blacklistedGoods = blacklistedGoods;
+	}
+
+	
+	public List<BeneficiaryInterestedCountryBean> getBeneInterestedCountry() {
+		return BeneInterestedCountry;
+	}
+
+	public void setBeneInterestedCountry(List<BeneficiaryInterestedCountryBean> beneInterestedCountry) {
+		BeneInterestedCountry = beneInterestedCountry;
 	}
 
 	@Override

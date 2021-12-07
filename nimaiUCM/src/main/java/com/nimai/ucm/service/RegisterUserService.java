@@ -2,6 +2,7 @@ package com.nimai.ucm.service;
 
 import java.util.List;
 
+import com.nimai.ucm.bean.BeneficiaryInterestedCountryBean;
 import com.nimai.ucm.bean.BlackListedGoodsBean;
 
 import com.nimai.ucm.bean.BranchUserBean;
@@ -10,6 +11,7 @@ import com.nimai.ucm.bean.InterestedCountryBean;
 import com.nimai.ucm.bean.NimaiCustomerBean;
 import com.nimai.ucm.bean.OwnerMasterBean;
 import com.nimai.ucm.bean.PersonalDetailsBean;
+import com.nimai.ucm.entity.BeneInterestedCountry;
 import com.nimai.ucm.entity.BlackListedGoods;
 import com.nimai.ucm.entity.InterestedCountry;
 import com.nimai.ucm.entity.NimaiCustomer;
@@ -41,10 +43,14 @@ public interface RegisterUserService {
 	boolean checkUserId(String userId);
 
 	public void saveInterestedCountry(InterestedCountry ic);
+	
+	public void saveBeneInterestedCountry(BeneInterestedCountry bic);
 
 	public void saveBlackListedGoods(BlackListedGoods blg);
 
 	public void updateInterestedCountry(InterestedCountryBean icb);
+	
+	public void updateBeneInterestedCountry(BeneficiaryInterestedCountryBean icb);
 
 	public void updateBlackListedGoods(BlackListedGoodsBean blgb);
 
