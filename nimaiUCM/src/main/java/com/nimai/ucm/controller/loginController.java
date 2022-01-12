@@ -2,6 +2,7 @@ package com.nimai.ucm.controller;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.jboss.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,6 +26,8 @@ import com.nimai.ucm.utility.ErrorDescription;
 @RestController
 public class loginController {
 
+	static Logger logger = Logger.getLogger(loginController.class.getName());
+	
 	@Autowired
 	private UserBranchService userBranchService;
 	
@@ -58,7 +61,18 @@ public class loginController {
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
 	} 
-
 	
+	@CrossOrigin(origins = "*", allowedHeaders = "*")
+	@PostMapping(value = "/updateTnc", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<Object> updateTnC(@RequestBody PersonalDetailsBean personDetailsBean) {
+		GenericResponse<Object> response = new GenericResponse<Object>();
+		logger.info(" ================ update TnC ================");
+		System.out.println("===== updating tnc timestamp ====");
+		String userId=personDetailsBean.getUserId();
+		userBranchService.updateTermsPolicy(userId);
+		response.setData("TnC has been updated Successfully");
+		response.setStatus("Success");
+		return new ResponseEntity<Object>(response, HttpStatus.OK);
+	}
 
 }

@@ -21,6 +21,9 @@ public interface SubscriptionPlanRepository extends JpaRepository<NimaiSubscript
 	@Query("FROM NimaiSubscriptionDetails n where n.userid.userid = :userId and n.status = 'Active'")
 	NimaiSubscriptionDetails findByUserId(String userId);
 	
+	@Query(value = "SELECT nsd.SPL_SERIAL_NUMBER from nimai_subscription_details nsd ORDER BY nsd.SPL_SERIAL_NUMBER DESC LIMIT 1", nativeQuery = true)
+	Integer findLastSerialNo();
+	
 	/*@Modifying
 	@Query("update NimaiSubscriptionDetails nsd set nsd.isVasApplied=1 where nsd.userid.userid = :userId and nsd.status = 'Active'")
 	void updateIsVASApplied(String userId);*/
@@ -61,6 +64,10 @@ public interface SubscriptionPlanRepository extends JpaRepository<NimaiSubscript
 	@Modifying
 	@Query(value = "update nimai_subscription_details set PAYMENT_TXN_ID=(:payTxnId), invoice_id=(:invoiceId), grand_amount=:grandgstValue where userid=(:userId) and status='ACTIVE'", nativeQuery = true)
 	void updatePaymentTxnIdForWire(String userId, String payTxnId, String invoiceId, String grandgstValue);
+	
+	@Modifying
+	@Query(value = "update nimai_subscription_details set LC_UTILIZED_COUNT=(:utilizedValue) where userid=(:userId) and status='ACTIVE'", nativeQuery = true)
+	void updateLCUtilzed(String userId,Integer utilizedValue);
 
 	@Modifying
 	@Query(value = "update nimai_subscription_details set PAYMENT_TXN_ID=(:payTxnId), grand_amount=(:amt) where userid=(:userId) and status='ACTIVE'", nativeQuery = true)
@@ -77,15 +84,21 @@ public interface SubscriptionPlanRepository extends JpaRepository<NimaiSubscript
 	Double findDiffInSubscriptionStartAndCurrentByUserId(String userId);
 
 	@Modifying
-	@Query(value = "update nimai_subscription_details set is_vas_applied=1,vas_amount=(:vasAmount),grand_amount=grand_amount+(:pricing) where userid=(:userId) and status='ACTIVE'", nativeQuery = true)
+	@Query(value = "update nimai_subscription_details set is_vas_applied=1,vas_amount=vas_amount+(:vasAmount),grand_amount=grand_amount+(:pricing) where userid=(:userId) and status='ACTIVE'", nativeQuery = true)
 	void updateVASDetailsApplied(String userId, Float vasAmount, Float pricing);
 
 	@Modifying
-	@Query(value = "update nimai_subscription_details set is_vas_applied=1,vas_amount=(:vasAmount),grand_amount=grand_amount+(:pricing) where userid=(:userId) and status='ACTIVE'", nativeQuery = true)
+	@Query(value = "update nimai_subscription_details set is_vas_applied=1,vas_amount=vas_amount+(:vasAmount),grand_amount=grand_amount+(:pricing) where userid=(:userId) and status='ACTIVE'", nativeQuery = true)
 	void updateVASDetailsAppliedWire(String userId, String vasAmount, String pricing);
 	
 	@Query(value = "select subscription_amount from nimai_m_subscription where subscription_id=:subscriptionId and status='ACTIVE'", nativeQuery = true)
 	Integer getSubscriptionAmt(String subscriptionId);
+	
+	@Query(value = "SELECT nsd.INVOICE_ID,nsd.INSERTED_DATE,nsd.PAYMENT_STATUS \n" + 
+			"FROM nimai_subscription_details nsd where\n" + 
+			"(nsd.STATUS!='Active' or nsd.PAYMENT_STATUS='Rejected') and nsd.userid=:userId \n" + 
+			"order by nsd.SPL_SERIAL_NUMBER desc", nativeQuery = true)
+	List getPreviousSubscription(String userId);
 
 	//@Modifying
 	

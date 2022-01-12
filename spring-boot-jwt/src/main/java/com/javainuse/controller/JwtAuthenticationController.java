@@ -92,12 +92,12 @@ public class JwtAuthenticationController {
 	}
 	
 	@CrossOrigin(origins = "*", allowedHeaders = "*")
-	@RequestMapping(value = "/getDetailsFromToken/{token}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
-	public ResponseEntity<Object> getDetailsFromToken(@PathVariable String token, HttpServletRequest request) throws Exception 
+	@RequestMapping(value = "/getDetailsFromToken/{referType}/{token}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE, method = RequestMethod.GET)
+	public ResponseEntity<Object> getDetailsFromToken(@PathVariable String token, @PathVariable String referType , HttpServletRequest request) throws Exception 
 	{
 		//token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJwYl9wX2lkIjoiMSIsInBiX3JlZGlyZWN0dXJsIjoiaHR0cHM6Ly9lYmF5LmluIiwicGJfaWVjIjoiQWRpcGlzY2kgZnVnaWF0IG5paCIsInBiX25hbWUiOiJLZW5uZWR5IFdyaWdodCIsInBiX2Rlc2lnbmF0aW9uIjoiRWEgZXhlcmNpdGF0aW9uIGRvbG8iLCJwYl9lbWFpbCI6InByYXRlZWttaXR0YWxAZ21haWwuY29tIiwicGJfb3JnYW5pemF0aW9uIjoiTW9vcmUgYW5kIFdpbGRlciBUcmFkZXJzIiwicGJfc3RyZWV0IjoiUXVhbSBldCBzaXQgYXJjaGl0ZSIsInBiX2NpdHkiOiJBdCBtb2xlc3RpYXMgaW4gcG9zcyIsInBiX3N0YXRlIjoiTW9sZXN0aWFzIG9jY2FlY2F0IGEiLCJwYl9jb3VudHJ5IjoiSW5kaWEiLCJwYl9waW5jb2RlIjoiT21uaXMgIiwicGJfbW9iaWxlIjoiKzkxOTc3MDk5MDA5MCIsInBiX2ZheCI6IisxICg3NjQpIDQ4OC0xNzA3IiwicGJfZ3N0aW4iOiJSZWN1c2FuZGFlIn0.qrm2OAFcIRn1o6AfbAZUefET8HIOyVm5gC-NrogdkUo";
 		GenericResponse<Object> response = new GenericResponse<Object>();
-		ReferralLeads refLeads=jwtTokenUtil.retrieveClaims(token);
+		ReferralLeads refLeads=jwtTokenUtil.retrieveClaims(token,referType);
 		FieoMember fm=new FieoMember();
 		fm.setLeadId(refLeads.getLeadId());
 		fm.setFirstName(refLeads.getFirstName());

@@ -111,6 +111,10 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 			"end where transaction_id=(:transId) and quotation_id=(:qid)", nativeQuery = true)
 	void updateQuotationToRePlacedByQid(Integer qid,String transId);
 
+	@Modifying
+	@Query(value= "update nimai_m_quotation set quotation_status='Placed' where transaction_id=(:transId) and quotation_status='Expired'", nativeQuery = true)
+	void updateQuotationToRePlacedByTransId(String transId);
+	
 	@Query(value= "select * from nimai_m_quotation where (quotation_status!='Rejected' or quotation_status is null) and transaction_id=(:transId)", nativeQuery = true)
 	List<QuotationMaster> findValidityDateAndQidByTransId(String transId);
 
@@ -217,7 +221,7 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 			"WHERE nsd.userid=(:userId) AND nsd.`STATUS`='Active'", nativeQuery = true)
 	void refundCredit(String userId);
 
-	@Modifying
+	/*@Modifying
 	@Query(value= "UPDATE nimai_subscription_details nsd SET\r\n" + 
 			"nsd.LC_UTILIZED_COUNT=\r\n" + 
 			"case \r\n" + 
@@ -227,6 +231,11 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 			"nsd.LC_UTILIZED_COUNT+1\r\n" + 
 			"end\r\n" + 
 			"WHERE nsd.userid=(:userId) AND nsd.`STATUS`='Active'", nativeQuery = true)
+	void updateLCUtilizedByUserId(String userId);*/
+	
+	@Modifying
+	@Query(value= "UPDATE nimai_subscription_details nsd SET\r\n" + 
+			"nsd.LC_UTILIZED_COUNT=nsd.LC_UTILIZED_COUNT+1 WHERE nsd.userid=(:userId) AND nsd.`STATUS`='Active'", nativeQuery = true)
 	void updateLCUtilizedByUserId(String userId);
 	
 	@Query(value = "SELECT userid from nimai_m_customer where account_source=(:userId) or userid=(:userId)", nativeQuery = true)

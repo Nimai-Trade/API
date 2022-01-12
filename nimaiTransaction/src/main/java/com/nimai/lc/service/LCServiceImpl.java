@@ -21,6 +21,7 @@ import javax.persistence.StoredProcedureQuery;
 
 import org.json.JSONException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -120,6 +121,9 @@ public class LCServiceImpl implements LCService {
 	@Autowired
 	EntityManagerFactory em;
 
+	@Value("${credit.boundary}")
+	private String creditBoundary;
+	
 	@Override
 	public void saveLCdetails(NimaiLCBean nimailcbean, String tid) {
 
@@ -321,15 +325,19 @@ public class LCServiceImpl implements LCService {
 	}*/
 	
 	@Override
-	public List<NewRequestEntity> getAllTransactionForBank(String userid) {
+	public List<NewRequestEntity> getAllTransactionForBank(String userid,String req) {
 		// TODO Auto-generated method stub
 		//lcmasterrepo.clearTransactionForBank();
+		System.out.println("ViewBy: "+req);
 		EntityManager entityManager = em.createEntityManager();
 		try {
 			StoredProcedureQuery storedProcedureQuery = entityManager
 					.createStoredProcedureQuery("get_transaction_for_bank", NewRequestEntity.class);
 			storedProcedureQuery.registerStoredProcedureParameter("user_id", String.class, ParameterMode.IN);
+			storedProcedureQuery.registerStoredProcedureParameter("view_by", String.class, ParameterMode.IN);
+						
 			storedProcedureQuery.setParameter("user_id", userid);
+			storedProcedureQuery.setParameter("view_by", req);
 			storedProcedureQuery.execute();
 			List<NewRequestEntity> list = storedProcedureQuery.getResultList();
 			
@@ -1048,7 +1056,8 @@ public class LCServiceImpl implements LCService {
 			getBAnksEmail.execute();
 			ModelMapperUtil modelMapper = new ModelMapperUtil();
 			List<NimaiClient> nimaiCust = getBAnksEmail.getResultList();
-			
+			System.out.println("UserID: "+userId);
+			System.out.println("TransactionID: "+transactionId);
 			EligibleEmailBeanResponse responseBean = new EligibleEmailBeanResponse();
 			//String custEmailId="";
 			List<EligibleEmailList> emailId = nimaiCust.stream().map(obj -> {
@@ -1077,13 +1086,14 @@ public class LCServiceImpl implements LCService {
 				System.out.println("No Banks Eligible");
 				
 			}
-			
+			System.out.println("Bank Details: "+nimaiCust);
 			Calendar cal = Calendar.getInstance();
 			Date insertedDate = cal.getTime();
 			NimaiEmailSchedulerAlertToBanks schedulerEntityCust = new NimaiEmailSchedulerAlertToBanks();
 			NimaiLCMaster passcodeDetails=lcmasterrepo.findSpecificTransactionById(transactionId);
-			
+			System.out.println("Customer PasscodeDetails: "+passcodeDetails);
 			NimaiClient custDetails=lcmasterrepo.getCustomerDetais(passcodeDetails.getBranchUserEmail());
+			System.out.println("customerDetails: "+custDetails);
 			//if branch userEmail consist parent user email or passcode userEmail
 			if(custDetails==null  ) {
 				schedulerEntityCust.setPasscodeuserEmail(passcodeDetails.getBranchUserEmail());
@@ -2593,8 +2603,8 @@ public class LCServiceImpl implements LCService {
 			
 			Integer lcCount=Integer.valueOf(request.getlCount());
 			Integer utilizedLcCount=request.getLcUtilizedCount();
-		
-			if (lcCount > utilizedLcCount) 
+			System.out.println("Credit Boundary: "+creditBoundary);
+			if (lcCount > (utilizedLcCount-Integer.valueOf(creditBoundary))) 
 			{
 				try 
 				{
@@ -2612,9 +2622,10 @@ public class LCServiceImpl implements LCService {
 					cal2.setTime(today);
 					System.out.println("Validity Date: "+cal1);
 					System.out.println("Today Date: "+cal2);
-					if(cal1.get(Calendar.DAY_OF_YEAR) < cal2.get(Calendar.DAY_OF_YEAR) ||
-							cal1.get(Calendar.MONTH) < cal2.get(Calendar.MONTH) ||
-							cal1.get(Calendar.YEAR) < cal2.get(Calendar.YEAR))
+					if(cal1.compareTo(cal2)<0)
+					//(cal1.get(Calendar.DAY_OF_YEAR) < cal2.get(Calendar.DAY_OF_YEAR) ||
+					//		cal1.get(Calendar.MONTH) < cal2.get(Calendar.MONTH) 
+						//|| cal1.get(Calendar.YEAR) < cal2.get(Calendar.YEAR))
 					{
 						response.setStatus("Failure");
 						response.setErrMessage("Please select correct transaction validity date");
@@ -2685,7 +2696,26 @@ public class LCServiceImpl implements LCService {
 		return goodsRepo.findAll();
 	}
 
+	@Override
+	public void updateTransactionValidity(NimaiLCMasterBean nimailc) {
+		// TODO Auto-generated method stub
+		NimaiLCMaster lcDetails=null;
+		System.out.println("Transaction Id: "+nimailc.getTransactionId());
+		System.out.println("Validity Date: "+nimailc.getValidity());
+		lcDetails=lcmasterrepo.getOne(nimailc.getTransactionId());
+		lcDetails.setTransactionStatus("Active");
+		lcDetails.setValidity(nimailc.getValidity());
+		lcmasterrepo.save(lcDetails);
+		System.out.println("Updating Quotation");
+		quotemasterrepo.updateQuotationToRePlacedByTransId(nimailc.getTransactionId());
+	}
 
+	@Override
+	public Date getCreditExhaust(String userId) {
+		// TODO Auto-generated method stub
+		
+		return lcrepo.findCreditExhaust(userId);
+	}
 	
 	
 }

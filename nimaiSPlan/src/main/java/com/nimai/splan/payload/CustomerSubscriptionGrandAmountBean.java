@@ -12,7 +12,7 @@ public class CustomerSubscriptionGrandAmountBean
 	private String vasApplied;
 	private Date insertedDate;
 	private String subscriptionId;
-	private Integer vasId;
+	private String vasId;
 	private Double discountId;
 	
 	
@@ -23,10 +23,10 @@ public class CustomerSubscriptionGrandAmountBean
 	public void setSubscriptionId(String subscriptionId) {
 		this.subscriptionId = subscriptionId;
 	}
-	public Integer getVasId() {
+	public String getVasId() {
 		return vasId;
 	}
-	public void setVasId(Integer vasId) {
+	public void setVasId(String vasId) {
 		this.vasId = vasId;
 	}
 	public Double getDiscountId() {

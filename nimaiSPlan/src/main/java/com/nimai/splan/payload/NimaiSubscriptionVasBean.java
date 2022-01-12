@@ -27,9 +27,22 @@ public class NimaiSubscriptionVasBean
 	private String paymentSts;
 	private String paymentTxnId;
 	private String invoiceId;
+	private Integer isSplanWithVasFlag;
+	private String vasPurchased;
 	
 	
-	
+	public String getVasPurchased() {
+		return vasPurchased;
+	}
+	public void setVasPurchased(String vasPurchased) {
+		this.vasPurchased = vasPurchased;
+	}
+	public Integer getIsSplanWithVasFlag() {
+		return isSplanWithVasFlag;
+	}
+	public void setIsSplanWithVasFlag(Integer isSplanWithVasFlag) {
+		this.isSplanWithVasFlag = isSplanWithVasFlag;
+	}
 	public String getInvoiceId() {
 		return invoiceId;
 	}

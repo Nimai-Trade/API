@@ -32,7 +32,8 @@ public interface ReferService {
 
 	public String checkKycApprovalStatus(String userId);
 
-	public List<FieoMember> getReferrerFieoLeads();
+	public List<FieoMember> getReferrerFieoLeads(String referUserId);
 
 	public String getEmailIdByFieoReferId(String userId);
+
 }

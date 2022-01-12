@@ -20,12 +20,15 @@ import com.nimai.ucm.bean.BranchUserListResponse;
 import com.nimai.ucm.bean.SubsidiaryListResponse;
 import com.nimai.ucm.bean.TermsAndPolicyBean;
 import com.nimai.ucm.bean.UserBranchBean;
+import com.nimai.ucm.entity.CustomerTnC;
 import com.nimai.ucm.entity.NimaiCustomer;
 import com.nimai.ucm.entity.TermsAndPolicy;
 import com.nimai.ucm.entity.UserBranchEntity;
 import com.nimai.ucm.repository.CustomerRepository;
+import com.nimai.ucm.repository.CustomerTnCRepo;
 import com.nimai.ucm.repository.TermsAndPolicyRepo;
 import com.nimai.ucm.repository.UserBranchRepository;
+import com.nimai.ucm.repository.UserDetailRepository;
 
 @Service
 public class UserBranchServiceImpl implements UserBranchService {
@@ -39,6 +42,12 @@ public class UserBranchServiceImpl implements UserBranchService {
 
 	@Autowired
 	private UserBranchRepository userBranchRepository;
+	
+	@Autowired
+	private CustomerTnCRepo customerTnCRepo;
+	
+	@Autowired
+	UserDetailRepository detailRepository;
 	
 	@Autowired
 	private TermsAndPolicyRepo termPolicyRepo;
@@ -233,4 +242,27 @@ if(subList.size()==0) {
 		
 		return tpb;
 	}
+
+	@Override
+	public void updateTermsPolicy(String userId) {
+		// TODO Auto-generated method stub
+		TermsAndPolicy tp=termPolicyRepo.getLastTermsAndPolicyDetails();
+		NimaiCustomer nc = detailRepository.getOne(userId);
+		
+		LOGGER.info("====== Logging user previous TnC acceptance date =====");
+		System.out.println("====== Logging user previous TnC acceptance date =====");
+		CustomerTnC ct=new CustomerTnC();
+		ct.setUserId(userId);
+		ct.setVersion(tp.getVersion());
+		ct.setAcceptedDate(nc.gettCInsertedDate());
+		ct.setInsertedDate(new Date());
+		customerTnCRepo.save(ct);
+		
+		LOGGER.info("====== Updating user TnC acceptance date =====");
+		System.out.println("====== Updating user TnC acceptance date =====");
+		nc.settCInsertedDate(new Date());
+		customerRepository.save(nc);
+	}
+	
+	
 }

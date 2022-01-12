@@ -30,7 +30,7 @@ public interface LCService {
 	public List<NimaiLCMaster> getAllTransactionDetails();
 
 	//public List<NimaiLCMaster> getAllTransactionForBank(String userid);
-	public List<NewRequestEntity> getAllTransactionForBank(String userid);
+	public List<NewRequestEntity> getAllTransactionForBank(String userid, String requirement);
 	
 	public NimaiLCMaster getSpecificTransactionDetail(String transactionId);
 
@@ -172,6 +172,10 @@ public interface LCService {
 	public List<ResponseEntity<Object>> saveTempLc(NimaiClient obtainUserId, NimaiLCBean nimailc);
 
 	public List<Goods> getGoodsList();
+
+	public void updateTransactionValidity(NimaiLCMasterBean nimailc);
+
+	public Date getCreditExhaust(String userId);
 
 	
 }

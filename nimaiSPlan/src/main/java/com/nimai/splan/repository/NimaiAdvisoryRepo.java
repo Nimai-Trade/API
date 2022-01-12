@@ -3,13 +3,16 @@ package com.nimai.splan.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.nimai.splan.model.NimaiAdvisory;
 import com.nimai.splan.model.NimaiSubscriptionVas;
 
+@Transactional
 @Repository
 public interface NimaiAdvisoryRepo extends JpaRepository<NimaiAdvisory, String> {
 
@@ -27,4 +30,8 @@ public interface NimaiAdvisoryRepo extends JpaRepository<NimaiAdvisory, String> 
 	
 	@Query(value="SELECT system_config_entity_value from nimai_system_config where system_config_entity='invoice_gst'", nativeQuery = true )
 	Double getGSTValue();
+	
+	@Modifying
+	@Query(value = "update nimai_subscription_vas set spl_serial_number=:spNo where userid=:userId and status='ACTIVE'", nativeQuery = true)
+	void updateSplSerialNo(String userId,Integer spNo);
 }

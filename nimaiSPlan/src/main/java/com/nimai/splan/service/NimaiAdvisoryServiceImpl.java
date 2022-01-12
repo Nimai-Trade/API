@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import com.nimai.splan.model.NimaiAdvisory;
 import com.nimai.splan.model.NimaiCustomerSubscriptionGrandAmount;
@@ -88,6 +89,7 @@ public class NimaiAdvisoryServiceImpl implements NimaiAdvisoryService {
 	@Override
 	public void addVasDetails(String userId, String subscriptionId, Integer vasId, String mode, int isSplanWithvasFlag) {
 		// TODO Auto-generated method stub
+		
 		NimaiAdvisory vasAdvisory=nimaiAdvisoryRepo.getDataByVasId(vasId);
 		NimaiSubscriptionVas nsv=new NimaiSubscriptionVas();
 		nsv.setUserId(userId);
@@ -108,6 +110,7 @@ public class NimaiAdvisoryServiceImpl implements NimaiAdvisoryService {
 		nsv.setInsertedDate(new Date());
 		nsv.setModifiedBy(userId);
 		nsv.setModifiedDate(new Date());
+		
 		if(mode.equalsIgnoreCase("Wire"))
 		{
 			nsv.setPaymentSts("Pending");
@@ -130,88 +133,99 @@ public class NimaiAdvisoryServiceImpl implements NimaiAdvisoryService {
 	}
 	
 	@Override
-	public void addVasDetailsAfterSubscription(String userId, String subscriptionId, Integer vasId, String mode, Float pricing, String paymentTxnId, String invoiceId) {
+	public void addVasDetailsAfterSubscription(String userId, String subscriptionId, String vasIdString, String mode, Float pricing, String paymentTxnId, String invoiceId) {
 		// TODO Auto-generated method stub
 		Double subscriptionTotalMonth,differenceInSubsStartAndCurrent;
 		Float vasFinalAmount = null;
-		NimaiAdvisory vasAdvisory=nimaiAdvisoryRepo.getDataByVasId(vasId);
-		NimaiSubscriptionDetails nsd=splanDetRepo.findByUserId(userId);
-		try
+		int vasCount = StringUtils.countOccurrencesOf(vasIdString, "-");
+		System.out.println("Total VAS: "+vasCount);
+		int i,vasId;
+		//int vasWithDisc=vasCount+1;
+		String vasSplitted[] =vasIdString.split("-",vasCount+1);
+		for(i=0;i<vasCount;i++)
 		{
-			subscriptionTotalMonth=splanDetRepo.findNoOfMonthOfSubscriptionByUserId(userId);
-			System.out.println("Subscription of Month: "+subscriptionTotalMonth);
-			differenceInSubsStartAndCurrent=splanDetRepo.findDiffInSubscriptionStartAndCurrentByUserId(userId);
-			System.out.println("Subscription of Month: "+differenceInSubsStartAndCurrent);
-			Double halfSubscriptionTotalMonth=subscriptionTotalMonth/2;
-			System.out.println("Half of SubscriptionTotalMonth: "+halfSubscriptionTotalMonth);
-			System.out.println("VAS Price: "+vasAdvisory.getPricing());
-			if(differenceInSubsStartAndCurrent>halfSubscriptionTotalMonth)
-				vasFinalAmount=vasAdvisory.getPricing()/2;
+			System.out.println("Iteration: "+i);
+			vasId=Integer.valueOf(vasSplitted[i]);
+			System.out.println("VASID: "+vasId);
+			NimaiAdvisory vasAdvisory=nimaiAdvisoryRepo.getDataByVasId(vasId);
+			NimaiSubscriptionDetails nsd=splanDetRepo.findByUserId(userId);
+			try
+			{
+				subscriptionTotalMonth=splanDetRepo.findNoOfMonthOfSubscriptionByUserId(userId);
+				System.out.println("Subscription of Month: "+subscriptionTotalMonth);
+				differenceInSubsStartAndCurrent=splanDetRepo.findDiffInSubscriptionStartAndCurrentByUserId(userId);
+				System.out.println("Subscription of Month: "+differenceInSubsStartAndCurrent);
+				Double halfSubscriptionTotalMonth=subscriptionTotalMonth/2;
+				System.out.println("Half of SubscriptionTotalMonth: "+halfSubscriptionTotalMonth);
+				System.out.println("VAS Price: "+vasAdvisory.getPricing());
+				if(differenceInSubsStartAndCurrent>halfSubscriptionTotalMonth)
+					vasFinalAmount=vasAdvisory.getPricing()/2;
+				else
+					vasFinalAmount=vasAdvisory.getPricing();
+			}
+			catch(Exception e)
+			{
+				subscriptionTotalMonth=0.0;
+				differenceInSubsStartAndCurrent=0.0;
+				vasFinalAmount=0f;
+			}
+			Double gstValue=nimaiAdvisoryRepo.getGSTValue()/100;
+			//System.out.println(""+nsv.getPricing());
+			Double planPriceGST=vasFinalAmount+(vasFinalAmount*gstValue);
+			System.out.println("gstValue: "+gstValue);
+			System.out.println("planPriceGST: "+planPriceGST);
+			String finalPrice = String.format("%.2f", planPriceGST);
+			String vasfinalPrice = String.format("%.2f", vasFinalAmount);
+			System.out.println("Final Amount: "+vasFinalAmount);
+			NimaiSubscriptionVas nsv=new NimaiSubscriptionVas();
+			nsv.setUserId(userId);
+			nsv.setSubscriptionId(subscriptionId);
+			nsv.setVasId(vasId);
+			nsv.setCountryName(vasAdvisory.getCountry_name());
+			nsv.setPlanName(vasAdvisory.getPlan_name());
+			nsv.setDescription_1(vasAdvisory.getDescription_1());
+			nsv.setDescription_2(vasAdvisory.getDescription_2());
+			nsv.setDescription_3(vasAdvisory.getDescription_3());
+			nsv.setDescription_4(vasAdvisory.getDescription_4());
+			nsv.setDescription_5(vasAdvisory.getDescription_5());
+			nsv.setCurrency(vasAdvisory.getCurrency());
+			nsv.setSplSerialNumber(nsd.getsPlSerialNUmber());
+			nsv.setStatus("Active");
+			nsv.setMode(mode);
+			nsv.setPaymentTxnId(paymentTxnId);
+			nsv.setInvoiceId(invoiceId);
+			if(mode.equalsIgnoreCase("Wire"))
+			{
+				nsv.setPricing(Float.valueOf(finalPrice));
+				nsv.setPaymentSts("Pending");
+			}
 			else
-				vasFinalAmount=vasAdvisory.getPricing();
-		}
-		catch(Exception e)
-		{
-			subscriptionTotalMonth=0.0;
-			differenceInSubsStartAndCurrent=0.0;
-			vasFinalAmount=0f;
-		}
-		Double gstValue=nimaiAdvisoryRepo.getGSTValue()/100;
-		//System.out.println(""+nsv.getPricing());
-		Double planPriceGST=vasFinalAmount+(vasFinalAmount*gstValue);
-		System.out.println("gstValue: "+gstValue);
-		System.out.println("planPriceGST: "+planPriceGST);
-		String finalPrice = String.format("%.2f", planPriceGST);
-		String vasfinalPrice = String.format("%.2f", vasFinalAmount);
-		System.out.println("Final Amount: "+vasFinalAmount);
-		NimaiSubscriptionVas nsv=new NimaiSubscriptionVas();
-		nsv.setUserId(userId);
-		nsv.setSubscriptionId(subscriptionId);
-		nsv.setVasId(vasId);
-		nsv.setCountryName(vasAdvisory.getCountry_name());
-		nsv.setPlanName(vasAdvisory.getPlan_name());
-		nsv.setDescription_1(vasAdvisory.getDescription_1());
-		nsv.setDescription_2(vasAdvisory.getDescription_2());
-		nsv.setDescription_3(vasAdvisory.getDescription_3());
-		nsv.setDescription_4(vasAdvisory.getDescription_4());
-		nsv.setDescription_5(vasAdvisory.getDescription_5());
-		nsv.setCurrency(vasAdvisory.getCurrency());
+			{
+				nsv.setPricing(Float.valueOf(finalPrice));
+				nsv.setPaymentSts("Approved");
+			}
+			nsv.setInsertedBy(userId);
+			nsv.setInsertedDate(new Date());
+			nsv.setModifiedBy(userId);
+			nsv.setModifiedDate(new Date());
+			nsvRepo.save(nsv);
+			if(mode.equalsIgnoreCase("Wire"))
+			{
+				
+				splanDetRepo.updateVASDetailsAppliedWire(userId,vasfinalPrice,finalPrice);
+				userRepository.updatePaymentTxnId("Wire",invoiceId, userId);
+			}
+			else
+			{
+				splanDetRepo.updateVASDetailsApplied(userId,vasFinalAmount,Float.valueOf(finalPrice));
+				userRepository.updatePaymentTxnId("Credit",invoiceId, userId);
+			}
+			/*if(mode.equalsIgnoreCase("wire"))
+			{
+				userRepository.updatePaymentMode("Wire", userId);
+				userRepository.updatePaymentStatus(userId);
+			}*/
 		
-		nsv.setStatus("Active");
-		nsv.setMode(mode);
-		nsv.setPaymentTxnId(paymentTxnId);
-		nsv.setInvoiceId(invoiceId);
-		if(mode.equalsIgnoreCase("Wire"))
-		{
-			nsv.setPricing(Float.valueOf(finalPrice));
-			nsv.setPaymentSts("Pending");
-		}
-		else
-		{
-			nsv.setPricing(pricing);
-			nsv.setPaymentSts("Approved");
-		}
-		nsv.setInsertedBy(userId);
-		nsv.setInsertedDate(new Date());
-		nsv.setModifiedBy(userId);
-		nsv.setModifiedDate(new Date());
-		nsvRepo.save(nsv);
-		if(mode.equalsIgnoreCase("Wire"))
-		{
-			
-			splanDetRepo.updateVASDetailsAppliedWire(userId,vasfinalPrice,finalPrice);
-			userRepository.updatePaymentTxnId("Wire",invoiceId, userId);
-		}
-		else
-		{
-			splanDetRepo.updateVASDetailsApplied(userId,vasFinalAmount,pricing);
-			userRepository.updatePaymentTxnId("Credit",invoiceId, userId);
-		}
-		/*if(mode.equalsIgnoreCase("wire"))
-		{
-			userRepository.updatePaymentMode("Wire", userId);
-			userRepository.updatePaymentStatus(userId);
-		}*/
 		NimaiEmailScheduler schedularData = new NimaiEmailScheduler();
 		schedularData.setUserid(nsd.getUserid().getUserid());
 		schedularData.setDescription1(vasAdvisory.getDescription_1());
@@ -226,6 +240,7 @@ public class NimaiAdvisoryServiceImpl implements NimaiAdvisoryService {
 		schedularData.setEmailStatus("Pending");
 		schedularData.setSubscriptionId(nsd.getSubscriptionId());
 		emailDetailsRepository.save(schedularData);
+		}
 	}
 
 	@Override
@@ -308,6 +323,22 @@ public class NimaiAdvisoryServiceImpl implements NimaiAdvisoryService {
 		// TODO Auto-generated method stub
 		NimaiCustomerSubscriptionGrandAmount userDet=nimaiCustomerGrandAmtRepository.getVASDetByUserId(userId);
 		return userDet;
+	}
+
+	
+	@Override
+	public void getLastSerialNoAndUpdate(String userId, String mode) {
+		// TODO Auto-generated method stub
+		Integer serialNo=splanDetRepo.findLastSerialNo();
+		System.out.println("SerialNo: "+serialNo);
+		if(mode.equalsIgnoreCase("Wire"))
+		{
+			nimaiAdvisoryRepo.updateSplSerialNo(userId, serialNo);
+		}
+		else
+		{
+			nimaiAdvisoryRepo.updateSplSerialNo(userId, serialNo);
+		}
 	}
 
 }

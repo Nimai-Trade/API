@@ -588,9 +588,9 @@ public class ReferServiceImpl implements ReferService {
 	}
 
 	@Override
-	public List<FieoMember> getReferrerFieoLeads() {
+	public List<FieoMember> getReferrerFieoLeads(String referUserId) {
 		// TODO Auto-generated method stub
-		List<ReferralLeads> rlList=refLeads.getSortedReferralLeads();
+		List<ReferralLeads> rlList=refLeads.getSortedReferralLeads(referUserId);
 		List<FieoMember> fieomember=new ArrayList<FieoMember>();
 		for(ReferralLeads rl:rlList)
 		{

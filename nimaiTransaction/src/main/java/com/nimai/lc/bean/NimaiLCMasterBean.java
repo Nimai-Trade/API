@@ -46,6 +46,7 @@ public class NimaiLCMasterBean implements Serializable
 	private String dischargeCountry;
 	private String dischargePort;
 	private String chargesType;
+	@JsonFormat(pattern = "yyyy-MM-dd")
 	private Date validity;
 	@JsonFormat(pattern = "yyyy-MM-dd")
 	private Date insertedDate;

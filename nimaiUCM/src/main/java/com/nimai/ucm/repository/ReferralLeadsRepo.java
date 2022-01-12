@@ -15,6 +15,6 @@ public interface ReferralLeadsRepo extends JpaRepository<ReferralLeads, Integer>
 	@Query(value = "select userid from nimai_m_customer where lead_id=(:leadid)", nativeQuery = true)
 	String getUserId(Integer leadid);
 	
-	@Query(value = "select rl from ReferralLeads rl order by rl.leadId desc")
-	List<ReferralLeads> getSortedReferralLeads();
+	@Query(value = "select rl from ReferralLeads rl where rl.referBy=:referUserId order by rl.leadId desc")
+	List<ReferralLeads> getSortedReferralLeads(String referUserId);
 }

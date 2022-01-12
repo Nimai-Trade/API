@@ -10,4 +10,7 @@ public interface TermsAndPolicyRepo extends JpaRepository<TermsAndPolicy , Integ
 {
 	@Query(value ="SELECT * FROM NIMAI_TERMS_POLICY where status='ACTIVE'" , nativeQuery = true)
 	TermsAndPolicy getTermsAndPolicyDetails();
+	
+	@Query(value ="SELECT * FROM NIMAI_TERMS_POLICY where status!='ACTIVE' order by id desc limit 1" , nativeQuery = true)
+	TermsAndPolicy getLastTermsAndPolicyDetails();
 }

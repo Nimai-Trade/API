@@ -16,4 +16,5 @@ public interface UserBranchService {
 	List<SubsidiaryListResponse> getAddUserList(String userId);
 	
 	public TermsAndPolicyBean getTermsAndPolicy();
+	void updateTermsPolicy(String userId);
 }

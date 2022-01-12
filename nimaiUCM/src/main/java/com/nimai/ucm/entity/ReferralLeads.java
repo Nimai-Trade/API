@@ -77,6 +77,18 @@ public class ReferralLeads implements Serializable
 	@Temporal(value=TemporalType.TIMESTAMP)
 	private Date modifiedDate;
 
+	@Column(name="REFER_BY")
+	private String referBy;
+	
+	
+	public String getReferBy() {
+		return referBy;
+	}
+
+	public void setReferBy(String referBy) {
+		this.referBy = referBy;
+	}
+
 	public Integer getLeadId() {
 		return leadId;
 	}

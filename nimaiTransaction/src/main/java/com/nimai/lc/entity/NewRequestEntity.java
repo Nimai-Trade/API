@@ -15,7 +15,8 @@ import javax.persistence.TemporalType;
 @Entity
 @Table(name="transaction_for_bank")
 @NamedStoredProcedureQuery(name = "get_transaction_for_bank", procedureName = "get_transaction_for_bank", parameters = {
-		@StoredProcedureParameter(mode = ParameterMode.IN, name = "user_id", type = String.class)})
+		@StoredProcedureParameter(mode = ParameterMode.IN, name = "user_id", type = String.class),
+		@StoredProcedureParameter(mode = ParameterMode.IN, name = "view_by", type = String.class)})
 public class NewRequestEntity 
 {
 	@Id 

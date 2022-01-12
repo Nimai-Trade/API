@@ -48,6 +48,9 @@ public class JwtTokenUtil implements Serializable {
 	@Value("${jwt.fieosecret}")
 	private byte[] fieoSecret;
 	
+	@Value("${jwt.rxilsecret}")
+	private byte[] rxilSecret;
+	
 	@Value("${referrer.fieo}")
 	private String fieoRefId;
 	
@@ -91,10 +94,14 @@ public class JwtTokenUtil implements Serializable {
 		return false;
 	}
 
-	public ReferralLeads retrieveClaims(String token) throws Exception
+	public ReferralLeads retrieveClaims(String token,String referType) throws Exception
 	{
 		Date d=new Date();
-		byte[] key=fieoSecret;
+		byte[] key;
+		if(referType.equalsIgnoreCase("fieo"))
+			key=fieoSecret;
+		else
+			key=rxilSecret;
 		Claims body = Jwts.parser()
 				.setSigningKey(key)
                 //.setSigningKey(fieoSecret)
@@ -134,10 +141,14 @@ public class JwtTokenUtil implements Serializable {
 		String emailID=body.get("pb_email").toString().toLowerCase();
 		ReferralLeads rl=new ReferralLeads();
 		ReferralLeads updateRl=refRepo.getRlDetails(emailID,mobNo,body.get("pb_organization").toString());
-		
+		System.out.println("ReferralLeads: "+updateRl);
 		if(updateRl==null ) {
+			System.out.println("Saving Referral leads....");
 			rl.setpId(""+body.get("pb_p_id"));
-			rl.setReferralId("FIEO");
+			if(referType.equalsIgnoreCase("fieo"))
+				rl.setReferralId("FIEO");
+			else
+				rl.setReferralId("RXIL");
 			//rl.setReferBy(fieoRefId);
 			rl.setReferBy(""+body.get("pb_referral_code"));
 			rl.setFirstName(""+firstName);
@@ -169,7 +180,10 @@ public class JwtTokenUtil implements Serializable {
 		}else {
 			updateRl=refRepo.getOne(updateRl.getLeadId());
 			updateRl.setpId(""+body.get("pb_p_id"));
-			updateRl.setReferralId("FIEO");
+			if(referType.equalsIgnoreCase("fieo"))
+				updateRl.setReferralId("FIEO");
+			else
+				updateRl.setReferralId("RXIL");
 			//updateRl.setReferBy(fieoRefId);
 			updateRl.setReferBy(""+body.get("pb_referral_code"));
 			updateRl.setFirstName(""+firstName);
@@ -212,10 +226,16 @@ public class JwtTokenUtil implements Serializable {
 		// TODO Auto-generated method stub
 		Refer refer = new Refer();
 		Date dNow = new Date();
+		NimaiCustomer cusdetails = cuRepo.getOne(rl.getReferBy());
+		ReferenceIdUniqueNumber refernceId = new ReferenceIdUniqueNumber();
 		try {
-			ReferenceIdUniqueNumber refernceId = new ReferenceIdUniqueNumber();
-			NimaiCustomer cusdetails = cuRepo.getOne(rl.getReferBy());
+			
+			
+			System.out.println("Referrer Details: "+cusdetails);
+			System.out.println("Referrer First name: "+cusdetails.getFirstName());
+			
 			Refer updateReferl=referRepo.getRefelDetails(rl.getEmailId(),rl.getMobileNo(),rl.getOrgName());
+			System.out.println("ReferDetails: "+updateReferl);
 			//if(updateReferl==null) {
 			if(flag.equalsIgnoreCase("save")) {
 				String rid = refernceId.uniqueNumberReferenceId();
@@ -234,7 +254,7 @@ public class JwtTokenUtil implements Serializable {
 				refer.setInsertedDate(dNow);
 				refer.setModifiedBy(rl.getFirstName());
 				refer.setModifiedDate(dNow);
-				if(rl.getMembershipStatus().equalsIgnoreCase("Member") || rl.getMembershipStatus().equalsIgnoreCase("NonPaidMember"))
+				if(rl.getReferralId().equalsIgnoreCase("fieo") && (rl.getMembershipStatus().equalsIgnoreCase("Member") || rl.getMembershipStatus().equalsIgnoreCase("NonPaidMember")))
 					refer.setPromoCode(fieoPromocode);
 				
 				referRepo.save(refer);
@@ -255,13 +275,33 @@ public class JwtTokenUtil implements Serializable {
 				//updateReferl.setInsertedDate(dNow);
 				updateReferl.setModifiedBy(rl.getFirstName());
 				updateReferl.setModifiedDate(dNow);
-				if(rl.getMembershipStatus().equalsIgnoreCase("Member") || rl.getMembershipStatus().equalsIgnoreCase("NonPaidMember"))
+				if(rl.getReferralId().equalsIgnoreCase("fieo") && (rl.getMembershipStatus().equalsIgnoreCase("Member") || rl.getMembershipStatus().equalsIgnoreCase("NonPaidMember")))
 						updateReferl.setPromoCode(fieoPromocode);
 				referRepo.save(updateReferl);
 			}
 		}
 		catch (Exception e) {
 			System.out.println("Exception: "+e);
+			String rid = refernceId.uniqueNumberReferenceId();
+			
+			refer.setReferenceId(rid);
+			refer.setUserid(cusdetails);
+			refer.setFirstName(rl.getFirstName());
+			refer.setLastName(rl.getLastName());
+			refer.setEmailAddress(rl.getEmailId());
+			refer.setReferrer_Email_Id(cusdetails.getEmailAddress());
+			refer.setMobileNo(rl.getMobileNo());
+			refer.setCompanyName(rl.getOrgName());
+			refer.setCountryName(rl.getCountry());
+			refer.setStatus("PENDING");
+			refer.setInsertedBy(rl.getFirstName());
+			refer.setInsertedDate(dNow);
+			refer.setModifiedBy(rl.getFirstName());
+			refer.setModifiedDate(dNow);
+			if(rl.getReferralId().equalsIgnoreCase("fieo") && (rl.getMembershipStatus().equalsIgnoreCase("Member") || rl.getMembershipStatus().equalsIgnoreCase("NonPaidMember")))
+				refer.setPromoCode(fieoPromocode);
+			
+			referRepo.save(refer);
 		}
 	}
 

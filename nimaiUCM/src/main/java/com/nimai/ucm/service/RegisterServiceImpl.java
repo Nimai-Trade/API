@@ -81,6 +81,9 @@ public class RegisterServiceImpl implements RegisterUserService {
 	@Value("${referrer.fieo}")
 	private String fieoRefId;
 	
+	@Value("${referrer.rxil}")
+	private String rxilRefId;
+	
 	@Override
 	public PersonalDetailsBean savePersonalDetails(PersonalDetailsBean personDetailsBean) {
 		// Changes from Sravan
@@ -198,6 +201,16 @@ public class RegisterServiceImpl implements RegisterUserService {
 		if(personDetailsBean.getAccount_source().equalsIgnoreCase("fieo"))
 		{
 			nc.setAccountSource(fieoRefId);
+			nc.setAccountType("REFER");
+			if(!nc.getEmailAddress().equalsIgnoreCase(nc.getEmailAddress1()))
+			{
+				detailRepository.updateReferEmailId(nc.getEmailAddress(), nc.getEmailAddress1());
+			}
+			nc.setEmailAddress1("");
+		}
+		if(personDetailsBean.getAccount_source().equalsIgnoreCase("rxil"))
+		{
+			nc.setAccountSource(rxilRefId);
 			nc.setAccountType("REFER");
 			if(!nc.getEmailAddress().equalsIgnoreCase(nc.getEmailAddress1()))
 			{

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,8 +21,11 @@ import com.nimai.splan.model.NimaiAdvisory;
 import com.nimai.splan.model.NimaiCustomerSubscriptionGrandAmount;
 import com.nimai.splan.model.NimaiSubscriptionVas;
 import com.nimai.splan.payload.NimaiSubscriptionVasBean;
+import com.nimai.splan.repository.NimaiAdvisoryRepo;
+import com.nimai.splan.repository.SubscriptionPlanRepository;
 import com.nimai.splan.payload.CustomerSubscriptionGrandAmountBean;
 import com.nimai.splan.payload.GenericResponse;
+import com.nimai.splan.payload.NimaiAfterVasSubscriptionBean;
 import com.nimai.splan.service.NimaiAdvisoryService;
 import com.nimai.splan.service.SubscriptionPlanService;
 import com.nimai.splan.utility.ErrorDescription;
@@ -39,6 +43,12 @@ public class AdvisoryController {
 	
 	@Autowired
 	private SubscriptionPlanService sPlanService;
+	
+	@Autowired
+	SubscriptionPlanRepository splanDetRepo;
+	
+	@Autowired
+	NimaiAdvisoryRepo nimaiAdvisoryRepo;
 	
 	GenericResponse response = new GenericResponse<>();
 	
@@ -93,17 +103,40 @@ public class AdvisoryController {
 	
 	@CrossOrigin(origins = "*", allowedHeaders = "*")
 	@PostMapping(value = "/addVAS", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> addVAS(@RequestBody NimaiSubscriptionVas nimaiSubsciptionVas) {
+	public ResponseEntity<?> addVAS(@RequestBody NimaiSubscriptionVasBean nimaiSubsciptionVas) {
 		GenericResponse response = new GenericResponse<>();
 		String userId=nimaiSubsciptionVas.getUserId();
-		int vasId=nimaiSubsciptionVas.getVasId();
+		//int vasId=nimaiSubsciptionVas.getVasId();
 		String subscriptionId=nimaiSubsciptionVas.getSubscriptionId();
 		String mode=nimaiSubsciptionVas.getMode();
 		int isSplanWithVasFlag=nimaiSubsciptionVas.getIsSplanWithVasFlag();
+		String vasPurchased=nimaiSubsciptionVas.getVasPurchased();
 		
 		try
 		{
+			int i;
+			int vasCount = StringUtils.countOccurrencesOf(vasPurchased, "-");
+			Integer totalVAS=vasCount;
+			System.out.println("Total VAS: "+totalVAS);
+			
 			advisoryService.inactiveVASStatus(userId);
+			//int vasWithDisc=vasCount+1;
+			String vasSplitted[] =vasPurchased.split("-",totalVAS);
+			
+			for(i=0;i<totalVAS;i++)
+			{
+				System.out.println("vasSplitted: "+vasSplitted[i]);
+				if(i==totalVAS-1)
+					vasSplitted[i]=vasSplitted[i].replace("-", "");
+				int vasId=Integer.valueOf(vasSplitted[i]);
+				System.out.println("VAS ID: "+vasId);
+				advisoryService.addVasDetails(userId,subscriptionId,vasId,mode,isSplanWithVasFlag);
+				
+			}
+			advisoryService.getLastSerialNoAndUpdate(userId,mode);
+			
+			response.setStatus("Success");
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
 		catch(Exception e)
 		{
@@ -111,10 +144,9 @@ public class AdvisoryController {
 			response.setStatus("Failure");
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
-		advisoryService.addVasDetails(userId,subscriptionId,vasId,mode,isSplanWithVasFlag);
+		
 		//response.setData(outdata1);
-		response.setStatus("Success");
-		return new ResponseEntity<Object>(response, HttpStatus.OK);
+		
 	}
 	
 	@CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -138,13 +170,14 @@ public class AdvisoryController {
 
 	@CrossOrigin(origins = "*", allowedHeaders = "*")
 	@PostMapping(value = "/addVASAfterSubscription", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<?> addVASAfterSubscription(@RequestBody NimaiSubscriptionVasBean nimaiSubsciptionVas) {
+	public ResponseEntity<?> addVASAfterSubscription(@RequestBody NimaiAfterVasSubscriptionBean nimaiSubsciptionVas) {
 		GenericResponse response = new GenericResponse<>();
 		String userId=nimaiSubsciptionVas.getUserId();
-		int vasId=nimaiSubsciptionVas.getVasId();
+		String vasId=nimaiSubsciptionVas.getVasId();
 		String subscriptionId=nimaiSubsciptionVas.getSubscriptionId();
-		Float pricing=nimaiSubsciptionVas.getPricing();
 		String mode=nimaiSubsciptionVas.getMode();
+		Float pricing;//=nimaiSubsciptionVas.getPricing();
+		
 		String paymentTxnId="",invoiceId="";
 		if(mode.equalsIgnoreCase("Wire"))
 		{
@@ -167,6 +200,7 @@ public class AdvisoryController {
 			response.setStatus("Failure");
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
+		pricing=0.0f;
 		advisoryService.addVasDetailsAfterSubscription(userId,subscriptionId,vasId,mode,pricing,paymentTxnId,invoiceId);
 		//response.setData(outdata1);
 		response.setErrMessage("VAS Plan Purchased Successfully");

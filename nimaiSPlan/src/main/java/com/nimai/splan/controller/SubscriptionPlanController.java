@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.management.GarbageCollectorMXBean;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.RequestDispatcher;
@@ -25,18 +26,22 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.nimai.splan.model.NimaiAdvisory;
 import com.nimai.splan.model.NimaiCustomerSubscriptionGrandAmount;
+import com.nimai.splan.model.NimaiMCustomer;
 import com.nimai.splan.model.NimaiMSubscription;
 import com.nimai.splan.model.OnlinePayment;
 import com.nimai.splan.payload.CustomerSubscriptionGrandAmountBean;
 import com.nimai.splan.payload.GenericResponse;
 import com.nimai.splan.payload.PaypalPaymentRequest;
 import com.nimai.splan.payload.SplanRequest;
+import com.nimai.splan.payload.SubscriptionAndPaymentBean;
 import com.nimai.splan.payload.SubscriptionBean;
 import com.nimai.splan.payload.SubscriptionPaymentBean;
 import com.nimai.splan.payload.SubscriptionPlanResponse;
@@ -227,7 +232,7 @@ public class SubscriptionPlanController {
 		logger.info(" ================ Send Payment Request ================:"
 				+ sPymentRequest.getUserId());
 		GenericResponse response = new GenericResponse<>();
-		Double subsAmt,vasAmt,discAmt,grandAmt;
+		Double subsAmt,vasAmt=0.0,discAmt,grandAmt;
 		String subsCurrency;
 		try
 		{	
@@ -238,19 +243,31 @@ public class SubscriptionPlanController {
 				NimaiMSubscription subsDet=sPlanService.getPlanDetailsBySubscriptionId(sPymentRequest.getMerchantParam2());
 				subsCurrency=subsDet.getCurrency();
 				subsAmt=(double) subsDet.getSubscriptionAmount();
+				int i;
+				int vasCount = StringUtils.countOccurrencesOf(sPymentRequest.getMerchantParam4(), "-");
+				System.out.println("Total VAS: "+vasCount);
 				
-				String vasSplitted[] =sPymentRequest.getMerchantParam4().split("-",2);
+				//int vasWithDisc=vasCount+1;
+				//String vasSplitted[] =merchantParam4.split("-",vasCount);
+				String vasSplitted[] =sPymentRequest.getMerchantParam4().split("-",vasCount+1);
 				
-				NimaiAdvisory vasDet=advService.getVasDetails(vasSplitted[0]);
-				//String vasSplitted[] =sPymentRequest.getMerchantParam5().split("-",2);
-				if(vasDet==null)
-					vasAmt=0.0;
-				else
-					vasAmt=(double) vasDet.getPricing();//Double.valueOf(vasSplitted[0]);
-				
-				discAmt=Double.valueOf(vasSplitted[1]);
+				for(i=0;i<vasCount;i++)
+				{
+					System.out.println("Iteration: "+i);
+					System.out.println("VAS: "+vasSplitted[i]);
+					NimaiAdvisory vasDet=advService.getVasDetails(vasSplitted[i]);
+					//String vasSplitted[] =sPymentRequest.getMerchantParam5().split("-",2);
+					if(vasDet==null)
+						vasAmt=0.0;
+					else
+						vasAmt=vasAmt+(double) vasDet.getPricing();//Double.valueOf(vasSplitted[0]);
+				}
+				System.out.println("VAS Amount: "+vasAmt);
+				System.out.println("Discount Amt: "+vasSplitted[vasCount]);
+				discAmt=Double.valueOf(vasSplitted[vasCount]);
 				
 				grandAmt=(subsAmt+vasAmt)-discAmt;
+				System.out.println("Grand Amount: "+grandAmt);
 			}
 			catch(Exception e)
 			{
@@ -675,7 +692,8 @@ public class SubscriptionPlanController {
 	@PostMapping("/continueBuy")
 	public ResponseEntity<?> saveGrandAmount(@RequestBody CustomerSubscriptionGrandAmountBean subscriptionRequest) 
 	{
-		Double subsAmt,vasAmt,discAmt,calculatedAmt;
+		System.out.println("======= Continue Buy =======");
+		Double subsAmt,vasAmt=0.0,discAmt,calculatedAmt;
 		NimaiCustomerSubscriptionGrandAmount ncsga;
 		GenericResponse response = new GenericResponse<>();
 		
@@ -689,12 +707,24 @@ public class SubscriptionPlanController {
 			HashMap<String,Double> discData=couponService.discountCalculate(subscriptionRequest.getDiscountId(), subscriptionRequest.getSubscriptionId());
 			discAmt=discData.get("discount");
 		}
-		if(subscriptionRequest.getVasId()==0)
+		if(subscriptionRequest.getVasId().equalsIgnoreCase("0"))
 			vasAmt=0.0;
 		else
 		{
-			NimaiAdvisory vasDet=advService.getVasDetails(subscriptionRequest.getVasId().toString());
-			vasAmt=(double) vasDet.getPricing();
+			System.out.println("VAS Purchased: "+subscriptionRequest.getVasId());
+			int i;
+			Double vasPrice=0.0;
+			int vasCount = StringUtils.countOccurrencesOf(subscriptionRequest.getVasId(), "-");
+			System.out.println("Total VAS: "+vasCount+1);
+			
+			String vasSplitted[] =subscriptionRequest.getVasId().split("-",vasCount+1);
+			for(i=0;i<vasCount+1;i++)
+			{
+				System.out.println("Iteration: "+i);
+				NimaiAdvisory vasDet=advService.getVasDetails(vasSplitted[i]);
+				vasPrice=(double) vasDet.getPricing();
+				vasAmt=vasAmt+vasPrice;
+			}
 		}
 		calculatedAmt=(subsAmt+vasAmt)-discAmt;
 		
@@ -756,5 +786,26 @@ public class SubscriptionPlanController {
 		}
 	}
 	
-	
+	@CrossOrigin(value = "*", allowedHeaders = "*")
+	@RequestMapping(value = "/getPreviousPlans", produces = "application/json", method = RequestMethod.POST)
+	public ResponseEntity<Object> getCount(@RequestBody NimaiMCustomer nimaicustomer,HttpServletRequest request) {
+		logger.info("======== Getting previously purchased plan =========");
+		GenericResponse response = new GenericResponse<>();
+		try {
+
+			String userId = nimaicustomer.getUserid();
+
+			List<SubscriptionAndPaymentBean> spb=sPlanService.getLastPurchasedPlan(userId);
+				response.setData(spb);
+				response.setStatus("Success");
+				return new ResponseEntity<Object>(response, HttpStatus.OK);
+			
+			
+		} catch (Exception e) {
+			response.setStatus("Failure");
+			response.setErrCode("EXE000");
+			response.setErrMessage(ErrorDescription.getDescription("EXE000"));
+			return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
+		}
+	}
 }

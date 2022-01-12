@@ -50,6 +50,9 @@ public class ReferController {
 	@Value("${referrer.fieo}")
 	private String fieoRefId;
 	
+	@Value("${referrer.rxil}")
+	private String rxilRefId;
+	
 	@Autowired
 	GenericResponse<Object> response;
 
@@ -191,7 +194,7 @@ public class ReferController {
 
 		List<NimaiCustomerReferrerBean> registeruser;
 		// Changes From Dhiraj
-		if(userId.equalsIgnoreCase(fieoRefId))
+		if(userId.equalsIgnoreCase(fieoRefId) || userId.equalsIgnoreCase(rxilRefId))
 		{
 			String obtainedEmailId=referservice.getEmailIdByFieoReferId(userId);
 			registeruser = referservice.getRegisterUserByReferrerUser(obtainedEmailId);
@@ -227,16 +230,19 @@ public class ReferController {
 		if (userId.equalsIgnoreCase(fieoRefId)) 
 			response.setData("FIEO");
 		else
+		if (userId.equalsIgnoreCase(rxilRefId)) 
+			response.setData("RXIL");
+		else
 			response.setData("");
 		return new ResponseEntity<Object>(response, HttpStatus.OK);
 
 	}
 	
 	@CrossOrigin(origins = "*", allowedHeaders = "*")
-	@GetMapping(value = "/getReferrerLeads")
-	public ResponseEntity<Object> getReferrerLeads() {
+	@GetMapping(value = "/getReferrerLeads/{referUserId}")
+	public ResponseEntity<Object> getReferrerLeads(@PathVariable String referUserId) {
 
-		List<FieoMember> fieoReferrer = referservice.getReferrerFieoLeads();
+		List<FieoMember> fieoReferrer = referservice.getReferrerFieoLeads(referUserId);
 		response.setData(fieoReferrer);
 		return new ResponseEntity<Object>(response, HttpStatus.OK);
 

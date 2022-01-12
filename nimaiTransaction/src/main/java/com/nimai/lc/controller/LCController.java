@@ -14,6 +14,7 @@ import javax.xml.ws.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -90,6 +91,9 @@ public class LCController {
 	@Autowired
 	CountrycurrencyRepository countryrepo;
 
+	@Value("${credit.boundary}")
+	private String creditBoundary;
+	
 	@CrossOrigin(value = "*", allowedHeaders = "*")
 	@PostMapping(value = "/saveLCToDraft", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<Object> saveLCdetails(@RequestBody NimaiLCBean nimailcbean) {
@@ -339,11 +343,24 @@ public class LCController {
 			System.out.println("Counts for User: " + userid);
 			System.out.println("LC Count: " + lcCount);
 			System.out.println("LC Utilzed Count: " + utilizedLcCount);
-			if (lcCount == 0) {
+			System.out.println("Credit Boundary: "+creditBoundary);
+			/*if (lcCount == 0) {
 				response.setStatus("Failure");
 				response.setErrMessage("You had reached maximum LC Count! Please Renew Your Subscription Plan");
 				return new ResponseEntity<Object>(response, HttpStatus.OK);
 			} else if (lcCount > utilizedLcCount) {
+				response.setStatus("Success");
+				return new ResponseEntity<Object>(response, HttpStatus.OK);
+			} else {
+				response.setStatus("Failure");
+				response.setErrMessage("You had reached maximum LC Count! Please Renew Your Subscription Plan");
+				return new ResponseEntity<Object>(response, HttpStatus.OK);
+			}*/
+			if (lcCount == (utilizedLcCount-Integer.valueOf(creditBoundary))) {
+				response.setStatus("Failure");
+				response.setErrMessage("You had reached maximum LC Count! Please Renew Your Subscription Plan");
+				return new ResponseEntity<Object>(response, HttpStatus.OK);
+			} else if (lcCount >= (utilizedLcCount-Integer.valueOf(creditBoundary))) {
 				response.setStatus("Success");
 				return new ResponseEntity<Object>(response, HttpStatus.OK);
 			} else {
@@ -410,11 +427,12 @@ public class LCController {
 		logger.info("=========== Get new Request for Bank ===========");
 		GenericResponse response = new GenericResponse<>();
 		String userid = nimailcbean.getUserId();
+		String requirement=nimailcbean.getRequirementType();
 		// List<NimaiLCMaster> transactions =
 		// lcservice.getAllTransactionForBank(userid);
 		String obtainUserId = userid;
 		// lcservice.checkMasterForSubsidiary(userid);
-		List<NewRequestEntity> newRequest = lcservice.getAllTransactionForBank(obtainUserId);
+		List<NewRequestEntity> newRequest = lcservice.getAllTransactionForBank(obtainUserId,requirement);
 		if (newRequest.isEmpty()) {
 			response.setStatus("Failure");
 			response.setErrCode("ASA002");
@@ -920,6 +938,35 @@ public class LCController {
 	        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
 	        .contentType(MediaType.parseMediaType("application/csv"))
 	        .body(file);
+	}
+	
+	@CrossOrigin(value = "*", allowedHeaders = "*")
+	@RequestMapping(value = "/updateTransactionValidity", produces = "application/json", method = RequestMethod.POST)
+	public ResponseEntity<?> updateValidityForTransaction(@RequestBody NimaiLCMasterBean nimailc)
+	{
+		logger.info("=========== Updating Transaction Validity ===========");
+		GenericResponse response = new GenericResponse<>();
+
+		String statusString = "Success";// this.lcValid.validateLCDetails(nimailcbean);
+		if (statusString.equalsIgnoreCase("Success")) {
+			try {
+				lcservice.updateTransactionValidity(nimailc);
+				response.setStatus("Success");
+				response.setData("");
+				return new ResponseEntity<Object>(response, HttpStatus.OK);
+			} catch (Exception e) {
+				response.setStatus("Failure");
+				response.setErrCode("EXE000");
+				System.out.println("Error:"+e);
+				response.setErrMessage(ErrorDescription.getDescription("EXE000") + " " + e);
+				return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
+			}
+		} else {
+			response.setStatus("Failure");
+			response.setErrCode("EXE000");
+			response.setErrMessage(statusString);
+			return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
+		}
 	}
 
 }

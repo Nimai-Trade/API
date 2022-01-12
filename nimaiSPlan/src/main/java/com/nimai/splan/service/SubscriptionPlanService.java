@@ -1,7 +1,9 @@
 package com.nimai.splan.service;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -11,6 +13,7 @@ import com.nimai.splan.model.NimaiMSubscription;
 import com.nimai.splan.model.OnlinePayment;
 import com.nimai.splan.payload.CustomerSubscriptionGrandAmountBean;
 import com.nimai.splan.payload.SplanRequest;
+import com.nimai.splan.payload.SubscriptionAndPaymentBean;
 import com.nimai.splan.payload.SubscriptionBean;
 import com.nimai.splan.payload.SubscriptionPaymentBean;
 import com.paypal.api.payments.Payment;
@@ -59,6 +62,8 @@ public interface SubscriptionPlanService {
 	void saveData(String orderId, String status) throws IOException;
 
 	Map<String, Object> executePayment(String orderId) throws PayPalRESTException;
+
+	List<SubscriptionAndPaymentBean> getLastPurchasedPlan(String userId) throws ParseException;
 
 	
 

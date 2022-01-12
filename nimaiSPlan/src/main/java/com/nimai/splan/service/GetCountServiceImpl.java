@@ -109,7 +109,7 @@ public class GetCountServiceImpl implements GetCountService{
 		storedProcedureQuery.registerStoredProcedureParameter("OUT_grand_amount", Integer.class, ParameterMode.OUT);
 		storedProcedureQuery.registerStoredProcedureParameter("OUT_discount_id", Integer.class, ParameterMode.OUT);
 		storedProcedureQuery.registerStoredProcedureParameter("OUT_discount_amount", Double.class, ParameterMode.OUT);
-		
+		storedProcedureQuery.registerStoredProcedureParameter("OUT_TNC_DATE", Date.class, ParameterMode.OUT);
 		
 		storedProcedureQuery.setParameter("i_user_id", userid);
         storedProcedureQuery.setParameter("i_email_id",emailAddress );
@@ -184,6 +184,8 @@ public class GetCountServiceImpl implements GetCountService{
         Integer OUT_grand_amount= (Integer) storedProcedureQuery.getOutputParameterValue("OUT_grand_amount");
         Integer OUT_discount_id= (Integer) storedProcedureQuery.getOutputParameterValue("OUT_discount_id");
         Double OUT_discount_amount= (Double) storedProcedureQuery.getOutputParameterValue("OUT_discount_amount");
+        Date OUT_TNC_DATE = (Date) storedProcedureQuery.getOutputParameterValue("OUT_TNC_DATE");
+        
         
 		HashMap<String,Object> outputdata1=new HashMap<String,Object>();
 		outputdata1.put("lc_count", OUT_LC_COUNT);
@@ -253,6 +255,7 @@ public class GetCountServiceImpl implements GetCountService{
 		outputdata1.put("grandamount", OUT_grand_amount);
 		outputdata1.put("discountId", OUT_discount_id);
 		outputdata1.put("discountAmount", OUT_discount_amount);
+		outputdata1.put("tncDate", OUT_TNC_DATE);
 		return outputdata1;
 	}
     catch(Exception e) {

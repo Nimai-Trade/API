@@ -3,6 +3,7 @@ package com.nimai.splan.service;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import com.nimai.splan.model.NimaiAdvisory;
 import com.nimai.splan.model.NimaiCustomerSubscriptionGrandAmount;
@@ -39,6 +41,7 @@ import com.nimai.splan.payload.GenericResponse;
 import com.nimai.splan.payload.SPlanApprovalBean;
 import com.nimai.splan.payload.SPlanResponseBean;
 import com.nimai.splan.payload.SplanRequest;
+import com.nimai.splan.payload.SubscriptionAndPaymentBean;
 import com.nimai.splan.payload.SubscriptionBean;
 import com.nimai.splan.payload.SubscriptionPaymentBean;
 import com.nimai.splan.payload.SubscriptionPlanResponse;
@@ -329,7 +332,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 		logger.info(" ================ renewSubscriptionPlan method Invoked ================");
 		Calendar cal = Calendar.getInstance();
 		Date today = cal.getTime();
-		int addOnCredit = 0, days = 0;
+		int addOnCredit = 0, utilzedLcCount=0, days = 0;
 		try {
 			if (subscriptionRequest.getSubscriptionId() != null) {
 				Optional<NimaiMCustomer> mCustomer = userRepository.findByUserId(userId);
@@ -394,7 +397,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 								/ (1000 * 60 * 60 * 24));
 						System.out.println("Diff between exp and current date: " + noOfDays);
 						if (inactiveSubscriptionEntity.getSubsidiaryUtilizedCount() >= Integer
-								.valueOf(subscriptionRequest.getSubsidiaries())) {
+								.valueOf(subscriptionRequest.getSubsidiaries()) && (userId.substring(0, 2).equalsIgnoreCase("CU"))) {
 							response.setStatus("Failure");
 							response.setErrMessage(
 									"You had already Active Subsidiary. Kindly select appropriate Plan.");
@@ -405,7 +408,11 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 							addOnCredit = (Integer.valueOf(inactiveSubscriptionEntity.getlCount())
 									- inactiveSubscriptionEntity.getLcUtilizedCount());
 						}
+						
 					}
+					
+					System.out.println("AddOnCredit: "+addOnCredit);
+					System.out.println("UtilizedLcCount: "+utilzedLcCount);
 					NimaiSubscriptionDetails subScriptionDetails = new NimaiSubscriptionDetails();
 					NimaiEmailScheduler schedularData = new NimaiEmailScheduler();
 					
@@ -417,6 +424,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 					subScriptionDetails.setSubscriptionAmount(subscriptionRequest.getSubscriptionAmount());
 					subScriptionDetails
 							.setlCount(String.valueOf(Integer.valueOf(subscriptionRequest.getLcCount()) + addOnCredit));
+					subScriptionDetails.setLcUtilizedCount(utilzedLcCount);
 					subScriptionDetails.setSubsidiaries(subscriptionRequest.getSubsidiaries());
 					subScriptionDetails.setIsVasApplied(subscriptionRequest.getIsVasApplied());
 					subScriptionDetails.setRelationshipManager(subscriptionRequest.getRelationshipManager());
@@ -500,7 +508,13 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 						System.out.println("planPriceGST: "+planPriceGST);
 						String finalPrice = String.format("%.2f", planPriceGST);
 						subscriptionDetailsRepository.updatePaymentTxnIdForWire(mCustomer.get().getUserid(), paymentTrId, invoiceId, finalPrice);
-
+						if(Integer.valueOf(inactiveSubscriptionEntity2.getlCount())<Integer.valueOf(inactiveSubscriptionEntity2.getLcUtilizedCount()))
+						{
+							utilzedLcCount=Integer.valueOf(inactiveSubscriptionEntity2.getLcUtilizedCount())
+									-Integer.valueOf(inactiveSubscriptionEntity2.getlCount());
+							subscriptionDetailsRepository.updateLCUtilzed(mCustomer.get().getUserid(),utilzedLcCount);
+						}
+							
 
 					} else {
 						userRepository.updatePaymentMode(subscriptionRequest.getModeOfPayment(),
@@ -518,6 +532,12 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 						{
 							userRepository.updatePaymentTransactionId(mCustomer.get().getUserid(), paymentDet.getInvoiceId());
 							subscriptionDetailsRepository.updatePaymentTxnIdInvId(mCustomer.get().getUserid(), paymentDet.getOrderId(), paymentDet.getInvoiceId());
+						}
+						if(Integer.valueOf(inactiveSubscriptionEntity2.getlCount())<Integer.valueOf(inactiveSubscriptionEntity2.getLcUtilizedCount()))
+						{
+							utilzedLcCount=Integer.valueOf(inactiveSubscriptionEntity2.getLcUtilizedCount())
+									-Integer.valueOf(inactiveSubscriptionEntity2.getlCount());
+							subscriptionDetailsRepository.updateLCUtilzed(mCustomer.get().getUserid(),utilzedLcCount);
 						}
 					}
 					/* schedular data requirement Code */
@@ -987,19 +1007,36 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 					System.out.println("Product description: "+productDescription);
 			Map<String, Object> response = new HashMap<String, Object>();
 			
-			String vasSplitted[] =merchantParam4.split("-",2);
+			int vasCount = StringUtils.countOccurrencesOf(merchantParam4, "-");
+			System.out.println("Total VAS: "+vasCount);
+			
+			//int vasWithDisc=vasCount+1;
+			String vasSplitted[] =merchantParam4.split("-",vasCount+1);
 			Double vasAmount = null;
+			Double vasFinalAmount=0.0;
+			int i;
 			try
 			{
-				vasAmount=advRepo.findPricingByVASId(Integer.valueOf(vasSplitted[0]));
-				if(vasAmount==null)
-					vasAmount=0.0;
+				for(i=0;i<vasCount;i++)
+				{
+					System.out.println("Iteration: "+i);
+					System.out.println("VAS: "+vasSplitted[i]);
+					vasAmount=advRepo.findPricingByVASId(Integer.valueOf(vasSplitted[i]));
+					if(vasAmount==null)
+					{
+						vasFinalAmount=0.0;
+					}
+					else
+					{
+						vasFinalAmount=vasFinalAmount+vasAmount;
+					}
+				}
 			}
 			catch(Exception e)
 			{
 				vasAmount=0.0;
 			}
-			final Double vasAmt=vasAmount;
+			final Double vasAmt=vasFinalAmount;
 			com.paypal.orders.Order order = null;
 			// Construct a request object and set desired parameters
 			// Here, OrdersCreateRequest() creates a POST request to /v2/checkout/orders
@@ -1064,8 +1101,8 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 	        	itemGst=amount*gst;
 	        	amountWithGST=amount+itemGst;
 	        }
-			if(!vasSplitted[1].equalsIgnoreCase("0"))
-				disc=Double.valueOf(vasSplitted[1]);
+			if(!vasSplitted[vasCount].equalsIgnoreCase("0"))
+				disc=Double.valueOf(vasSplitted[vasCount]);
 			else
 				disc=0.0;
 			Double subVas=Double.valueOf(merchantParam5)+vasAmt;
@@ -1626,7 +1663,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 								/ (1000 * 60 * 60 * 24));
 						System.out.println("Diff between exp and current date: " + noOfDays);
 						if (inactiveSubscriptionEntity.getSubsidiaryUtilizedCount() >= Integer
-								.valueOf(subscriptionRequest.getSubsidiaries())) {
+								.valueOf(subscriptionRequest.getSubsidiaries()) && userId.substring(0, 2).equalsIgnoreCase("CU")) {
 							response.setStatus("Failure");
 							response.setErrMessage(
 									"You had already Active Subsidiary. Kindly select appropriate Plan.");
@@ -1869,5 +1906,31 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 		//		userRepository.updatePaymentStatus("Approved", op.getOrderId(), op.getUserId());
 			//userRepository.updatePaymentTransactionId(op.getUserId(), op.getOrderId());
 		}
+	}
+
+	@Override
+	public List<SubscriptionAndPaymentBean> getLastPurchasedPlan(String userId) throws ParseException {
+		// TODO Auto-generated method stub
+		List<SubscriptionAndPaymentBean> sp=new ArrayList<SubscriptionAndPaymentBean>();
+		DateFormat simpleDateFormat=new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		try
+		{
+			List<SubscriptionAndPaymentBean> spb=subscriptionDetailsRepository.getPreviousSubscription(userId);
+			System.out.println("list: "+spb);
+			for(Object d:spb)
+			{
+				System.out.println("============= "+d);
+				SubscriptionAndPaymentBean s=new SubscriptionAndPaymentBean();
+				s.setInvoiceId(((Object[])d)[0]==null?"null":((Object[])d)[0].toString());
+				s.setInsertedDate(((Object[])d)[1]==null?new Date(0):(Date)simpleDateFormat.parse(((Object[])d)[1].toString()));
+				s.setPaymentStatus(((Object[])d)[2]==null?"null":((Object[])d)[2].toString());
+				sp.add(s);
+			}
+		}
+		catch(Exception e)
+		{
+			System.out.println(e);
+		}
+		return sp;
 	}
 }

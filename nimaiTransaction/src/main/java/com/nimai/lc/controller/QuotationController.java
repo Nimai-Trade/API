@@ -11,6 +11,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -59,6 +60,9 @@ public class QuotationController
 	
 	@Autowired
 	TransactionSavingRepo trSavingRepo;
+	
+	@Value("${credit.boundary}")
+	private String creditBoundary;
 	
 	private static final Logger logger = LoggerFactory.getLogger(NimaiTransactionApplication.class);
 
@@ -181,7 +185,7 @@ public class QuotationController
 			System.out.println("Counts for Bank User: " + obtainUserId);
 			System.out.println("LC Count: " + lcCount);
 			System.out.println("LC Utilzed Count: " + utilizedLcCount);
-			if (lcCount - utilizedLcCount == 0) 
+			if (lcCount - (utilizedLcCount-Integer.valueOf(creditBoundary)) == 0) 
 			{
 				response.setStatus("Failure");
 				response.setErrMessage("Your Credit has been exhaust. Please Select Subscription Plan.");
@@ -501,6 +505,7 @@ public class QuotationController
 	@CrossOrigin(value = "*", allowedHeaders = "*")
 	@RequestMapping(value = "/acceptQuote", produces = "application/json", method = RequestMethod.POST)
 	public ResponseEntity<?> acceptQuotation(@RequestBody QuotationBean quotationbean) {
+		Integer lcCount=0,utilizedLcCount=0;
 		logger.info("=========== Accept Quotation ===========");
 		GenericResponse response = new GenericResponse<>();
 		
@@ -508,6 +513,23 @@ public class QuotationController
 		String transId = quotationbean.getTransactionId();
 		String userId= quotationbean.getUserId();
 		System.out.println("Quotation Id: "+quotationId);
+		
+		lcCount = lcservice.getLcCount(userId);
+		utilizedLcCount = lcservice.getUtilizedLcCount(userId);
+	
+		System.out.println("Counts for User: " + userId);
+		System.out.println("LC Count: " + lcCount);
+		System.out.println("LC Utilzed Count: " + utilizedLcCount);
+		NimaiLCMaster transDetails=lcservice.checkTransaction(transId);
+		Date creditExhaustDate=lcservice.getCreditExhaust(userId);
+		System.out.println("Credit Exhaust Date: "+creditExhaustDate);
+		if ((lcCount - utilizedLcCount < 0) && transDetails.getInsertedDate().after(creditExhaustDate)) 
+		{
+			
+			response.setStatus("Failure");
+			response.setErrMessage("You cannot accept the quote. Please renew the Subscription Plan.");
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		}
 		QuotationMaster qmData=quotationService.getDetailsOfAcceptedTrans(transId);
 		if(qmData!=null)
 		{

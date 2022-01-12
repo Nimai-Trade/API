@@ -22,7 +22,7 @@ public interface NimaiAdvisoryService {
 
 		public NimaiAdvisory getVasDetails(String string);
 
-		void addVasDetailsAfterSubscription(String userId, String subscriptionId, Integer vasId, String mode, Float pricing, String paymentTxnId, String invoiceId);
+		void addVasDetailsAfterSubscription(String userId, String subscriptionId, String vasId, String mode, Float pricing, String paymentTxnId, String invoiceId);
 
 		Float getVASAmount(String userId, Integer vasId);
 
@@ -31,4 +31,7 @@ public interface NimaiAdvisoryService {
 		public void removeGrandVasDetails(Integer id);
 
 		NimaiCustomerSubscriptionGrandAmount getCustomerVASAmount(String userId);
+
+		public void getLastSerialNoAndUpdate(String userId, String mode);
+
 }

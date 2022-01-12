@@ -93,8 +93,18 @@ public class NimaiSubscriptionVas implements Serializable {
 	@Column(name="SPLAN_VAS_FLAG")
 	private int isSplanWithVasFlag;
 	
-    
+	@Column(name="SPL_SERIAL_NUMBER")
+	private Integer splSerialNumber;
 	
+	
+	public Integer getSplSerialNumber() {
+		return splSerialNumber;
+	}
+
+	public void setSplSerialNumber(Integer splSerialNumber) {
+		this.splSerialNumber = splSerialNumber;
+	}
+
 	public int getIsSplanWithVasFlag() {
 		return isSplanWithVasFlag;
 	}

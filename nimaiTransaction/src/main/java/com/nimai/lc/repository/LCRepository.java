@@ -77,6 +77,9 @@ public interface LCRepository extends JpaRepository<NimaiLC, String>{
 	@Query(value="SELECT ifnull(LC_UTILIZED_COUNT,0) from nimai_subscription_details where userid=(:userId) and status='ACTIVE'", nativeQuery = true )
 	Integer findUtilzedLCCount(@Param("userId") String userId);
 
+	@Query(value="SELECT CREDIT_EXHAUST from nimai_subscription_details where userid=(:userId) and status='ACTIVE'", nativeQuery = true )
+	Date findCreditExhaust(@Param("userId") String userId);
+	
 	@Query(value="select count(*) from nimai_f_intcountry where country_name=(:countryName)", nativeQuery = true)
 	Integer getBanksCountForCountry(String countryName);
 
