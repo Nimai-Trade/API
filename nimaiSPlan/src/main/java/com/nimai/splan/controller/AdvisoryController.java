@@ -156,7 +156,7 @@ public class AdvisoryController {
 		List<NimaiSubscriptionVas> vasDetails= advisoryService.getActiveVASByUserId(nimaiSubsciptionVas.getUserId());
 		if(vasDetails.isEmpty())
 		{
-			response.setErrMessage("No Records Found");;
+			response.setErrMessage("No Records Found");
 			response.setStatus("Failure");
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}

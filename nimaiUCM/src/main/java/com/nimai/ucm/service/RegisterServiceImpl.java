@@ -187,6 +187,7 @@ public class RegisterServiceImpl implements RegisterUserService {
 			if (personDetailsBean.getAccount_type().equalsIgnoreCase("REFER")) {
 				nc.setCompanyName(personDetailsBean.getCompanyName());
 				nc.setLeadId(0);
+				
 			} else {
 				nc.setCompanyName("");
 			}
@@ -210,6 +211,7 @@ public class RegisterServiceImpl implements RegisterUserService {
 		}
 		if(personDetailsBean.getAccount_source().equalsIgnoreCase("rxil"))
 		{
+			detailRepository.updateReferRXILDetails(personDetailsBean.getFirstName(), personDetailsBean.getLastName(), personDetailsBean.getEmailAddress(), personDetailsBean.getMobileNum(), personDetailsBean.getLeadId().toString());
 			nc.setAccountSource(rxilRefId);
 			nc.setAccountType("REFER");
 			if(!nc.getEmailAddress().equalsIgnoreCase(nc.getEmailAddress1()))

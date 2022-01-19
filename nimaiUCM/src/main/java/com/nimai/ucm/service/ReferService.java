@@ -36,4 +36,6 @@ public interface ReferService {
 
 	public String getEmailIdByFieoReferId(String userId);
 
+	public Refer getReferDetails(String referEmailId);
+
 }

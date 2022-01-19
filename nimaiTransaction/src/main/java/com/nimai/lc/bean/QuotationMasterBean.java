@@ -52,9 +52,22 @@ public class QuotationMasterBean implements Serializable
 	private String goods;
 	private Integer noOfGoodsByBank;
 	private String rejectedBy;
+	private String preferred;
+	private String rating;
 	
 	
-	
+	public String getRating() {
+		return rating;
+	}
+	public void setRating(String rating) {
+		this.rating = rating;
+	}
+	public String getPreferred() {
+		return preferred;
+	}
+	public void setPreferred(String preferred) {
+		this.preferred = preferred;
+	}
 	public String getConfChgsIssuanceToClaimExp() {
 		return confChgsIssuanceToClaimExp;
 	}

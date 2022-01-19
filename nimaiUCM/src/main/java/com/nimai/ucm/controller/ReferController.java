@@ -248,4 +248,14 @@ public class ReferController {
 
 	}
 	
+	@CrossOrigin(origins = "*", allowedHeaders = "*")
+	@GetMapping(value = "/getReferData/{referEmailId}")
+	public ResponseEntity<Object> getReferData(@PathVariable String referEmailId) {
+
+		Refer referData = referservice.getReferDetails(referEmailId);
+		response.setData(referData);
+		return new ResponseEntity<Object>(response, HttpStatus.OK);
+
+	}
+	
 }

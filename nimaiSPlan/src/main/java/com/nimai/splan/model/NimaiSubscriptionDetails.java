@@ -125,6 +125,18 @@ public class NimaiSubscriptionDetails implements Serializable {
 	@Column(name="PAYMENT_STATUS")
 	private String paymentStatus;
 	
+	@Column(name="INVOICE_ID")
+	private String invoiceId;
+	
+	
+	public String getInvoiceId() {
+		return invoiceId;
+	}
+
+	public void setInvoiceId(String invoiceId) {
+		this.invoiceId = invoiceId;
+	}
+
 	public String getPaymentMode() {
 		return paymentMode;
 	}

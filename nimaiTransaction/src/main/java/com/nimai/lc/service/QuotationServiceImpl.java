@@ -416,6 +416,12 @@ public class QuotationServiceImpl implements QuotationService {
 			qmb.setNoOfQuotesByBank(quotationMasterRepo.getQuotesCount(qm.getBankUserId()));
 			qmb.setGoods(quotationMasterRepo.getGoodsByTransactionId(qm.getTransactionId()));
 			qmb.setNoOfGoodsByBank(quotationMasterRepo.getGoodsCount(qmb.getGoods(), qm.getBankUserId()));
+			String prefer=quotationMasterRepo.getPreferredBank(qm.getUserId(),qm.getBankUserId());
+			if(prefer==null || prefer.equalsIgnoreCase(""))
+				qmb.setPreferred("Preferred");
+			else
+				qmb.setPreferred("No");
+			qmb.setRating(quotationMasterRepo.getRating(qm.getBankUserId()));
 			qmList.add(qmb);
 		}
 		return qmList;

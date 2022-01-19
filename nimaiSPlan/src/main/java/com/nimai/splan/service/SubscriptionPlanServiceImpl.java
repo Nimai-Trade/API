@@ -690,6 +690,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 						responseBean.setDiscount(temp.getDiscount());
 						responseBean.setGrandAmount(temp.getGrandAmount());
 						responseBean.setSubsStartDate(temp.getInsertedDate());
+						responseBean.setInvoiceId(temp.getInvoiceId());
 						subscriptionBean.add(responseBean);
 						response.setData(subscriptionBean);
 

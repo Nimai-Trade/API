@@ -29,7 +29,15 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 	@Query(value="SELECT * from get_all_quotation where userid=(:userId)", nativeQuery = true )
 	List<QuotationMaster> findAllQuotationByUserId(@Param("userId") String userId);
 	
-	@Query(value="SELECT * from get_all_quotation where userid=(:userId) and transaction_id=(:transactionId) and (validity_date>=curdate() and (quotation_status NOT IN ('Rejected','Expired','ExpPlaced','Withdrawn') OR quotation_status IS NULL))", nativeQuery = true )
+	@Query(value="SELECT qu.* from get_all_quotation qu\r\n" + 
+			"INNER JOIN customer_preferred_banks cpb\r\n" + 
+			"where qu.userid=:userId \r\n" + 
+			"and qu.transaction_id=:transactionId \r\n" + 
+			"and (qu.validity_date>=curdate() and \r\n" + 
+			"(qu.quotation_status NOT IN ('Rejected','Expired','ExpPlaced','Withdrawn') \r\n" + 
+			"OR qu.quotation_status IS NULL))\r\n" + 
+			"group by qu.bank_userid\r\n" + 
+			"order by cpb.id;", nativeQuery = true )
 	List<QuotationMaster> findAllQuotationByUserIdAndTransactionId(@Param("userId") String userId,@Param("transactionId") String transactionId);
 
 	@Query(value="SELECT * from get_all_quotation where userid=(:userId) and transaction_id=(:transactionId) and (quotation_status like '%Placed')", nativeQuery = true )
@@ -265,6 +273,13 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 
 	@Query(value="SELECT * from get_all_quotation where quotation_id=(:quotationId) and quotation_status='Accepted'", nativeQuery = true )
 	QuotationMaster findQuotationByAcceptedQuotationId(Integer quotationId);
+
+	@Query(value="select cpb.bank_userid from customer_preferred_banks cpb\r\n" + 
+			"where cpb.cust_userid=:userId and cpb.bank_userid=:bankUserId", nativeQuery = true )
+	String getPreferredBank(String userId, String bankUserId);
+
+	@Query(value="select br.rating from bank_rating br where br.bank_userid=:bankUserId", nativeQuery = true )
+	String getRating(String bankUserId);
 
 	
 

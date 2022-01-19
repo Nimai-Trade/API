@@ -77,4 +77,8 @@ public interface UserDetailRepository extends JpaRepository<NimaiCustomer, Strin
 	@Query(value = "update nimai_m_refer set email_address=(:newEmailID) where email_address=(:fieoID)", nativeQuery = true)
 	void updateReferEmailId(String newEmailID,String fieoID); 
 	
+	@Modifying
+	@Query(value = "update nimai_m_refer set first_name=(:firstName), last_name=(:lastName), email_address=(:emailID), mobile_no=(:mobNo) where REFERERNCEID=(:leadId)", nativeQuery = true)
+	void updateReferRXILDetails(String firstName,String lastName,String emailID,String mobNo,String leadId); 
+	
 }

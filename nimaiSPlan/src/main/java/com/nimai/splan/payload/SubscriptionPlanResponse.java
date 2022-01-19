@@ -22,8 +22,18 @@ public class SubscriptionPlanResponse {
 	private int isVasApplied;
 	private int discountId;
 	private Date subsStartDate;
-
+	private String invoiceId;
 	
+	
+	
+	public String getInvoiceId() {
+		return invoiceId;
+	}
+
+	public void setInvoiceId(String invoiceId) {
+		this.invoiceId = invoiceId;
+	}
+
 	public Date getSubsStartDate() {
 		return subsStartDate;
 	}
