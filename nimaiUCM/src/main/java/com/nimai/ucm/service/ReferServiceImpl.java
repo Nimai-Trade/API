@@ -613,4 +613,10 @@ public class ReferServiceImpl implements ReferService {
 		NimaiCustomer fieoReferrerDet = getRegiUserRepo.findRegisterUser(userId);
 		return fieoReferrerDet.getEmailAddress();
 	}
+
+	@Override
+	public Refer getReferDetails(String referEmailId) {
+		// TODO Auto-generated method stub
+		return referRepo.getDataByEmail(referEmailId);
+	}
 }

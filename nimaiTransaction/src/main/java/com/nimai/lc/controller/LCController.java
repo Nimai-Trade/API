@@ -50,6 +50,7 @@ import com.nimai.lc.entity.Quotation;
 import com.nimai.lc.payload.GenericResponse;
 import com.nimai.lc.repository.CountrycurrencyRepository;
 import com.nimai.lc.repository.GoodsRepository;
+import com.nimai.lc.repository.LCMasterRepository;
 import com.nimai.lc.repository.LCRepository;
 import com.nimai.lc.repository.NimaiClientRepository;
 import com.nimai.lc.service.CSVService;
@@ -85,6 +86,9 @@ public class LCController {
 	@Autowired
 	LCRepository lcrepo;
 
+	@Autowired
+	LCMasterRepository lcmasterrepo;
+	
 	@Autowired
 	GenericResponse response;
 
@@ -309,9 +313,13 @@ public class LCController {
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
 		try {
-
-			List<ResponseEntity<Object>> obj = lcservice.saveTempLc(obtainUserId, nimailc);
-			return obj.get(0);
+			System.out.println("ObtainUserID: "+obtainUserId.getUserid());
+			String subsStatus=lcmasterrepo.findActivePlanByUserId(obtainUserId.getUserid());
+			if(subsStatus.equalsIgnoreCase("Active"))
+				return lcservice.saveTempLc(obtainUserId, nimailc);
+			else
+				return lcservice.saveTempLc(obtainUserId, nimailc);
+			
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -336,10 +344,10 @@ public class LCController {
 			userid=lcservice.getAccountSource(userid);
 		}
 		String statusString = "Success"; // this.lcValid.validateUserTransaction(nimailc);
-		
+		Integer lcCount,utilizedLcCount;
 		try {
-			Integer lcCount = lcservice.getLcCount(userid);
-			Integer utilizedLcCount = lcservice.getUtilizedLcCount(userid);
+			lcCount = lcservice.getLcCount(userid);
+			utilizedLcCount = lcservice.getUtilizedLcCount(userid);
 			System.out.println("Counts for User: " + userid);
 			System.out.println("LC Count: " + lcCount);
 			System.out.println("LC Utilzed Count: " + utilizedLcCount);
@@ -356,6 +364,7 @@ public class LCController {
 				response.setErrMessage("You had reached maximum LC Count! Please Renew Your Subscription Plan");
 				return new ResponseEntity<Object>(response, HttpStatus.OK);
 			}*/
+			
 			if (lcCount == (utilizedLcCount-Integer.valueOf(creditBoundary))) {
 				response.setStatus("Failure");
 				response.setErrMessage("You had reached maximum LC Count! Please Renew Your Subscription Plan");
@@ -369,9 +378,21 @@ public class LCController {
 				return new ResponseEntity<Object>(response, HttpStatus.OK);
 			}
 		} catch (NullPointerException ne) {
-			response.setStatus("Failure");
-			System.out.println("You are not Subscribe to a Plan. Please Subscribe");
-			response.setErrMessage("You are not Subscribe to a Plan. Please Subscribe");
+			String sts=lcrepo.findLatestStatusForSubscription(userid);
+			lcCount=lcrepo.findLCCountForInactive(userid);
+			utilizedLcCount=lcrepo.findUtilzedLCCountForInactive(userid);
+			if((lcCount == (utilizedLcCount-Integer.valueOf(creditBoundary))) && sts.equalsIgnoreCase("inactive"))
+			{
+				response.setStatus("Failure");
+				System.out.println("You had reached maximum LC Count and plan is expired. Please Renew Your Subscription Plan");
+				response.setErrMessage("You are not Subscribe to a Plan. Please Subscribe");
+			}
+			else
+			{
+				response.setStatus("Success");
+				//System.out.println("");
+				//response.setErrMessage("");
+			}
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
 

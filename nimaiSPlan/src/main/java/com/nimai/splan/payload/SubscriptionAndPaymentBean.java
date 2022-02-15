@@ -10,6 +10,18 @@ public class SubscriptionAndPaymentBean {
 
 	private String paymentStatus;
 	
+	private Integer splSerialNo;
+	
+	
+	
+	public Integer getSplSerialNo() {
+		return splSerialNo;
+	}
+
+	public void setSplSerialNo(Integer splSerialNo) {
+		this.splSerialNo = splSerialNo;
+	}
+
 	public String getInvoiceId() {
 		return invoiceId;
 	}

@@ -109,28 +109,41 @@ public class JwtTokenUtil implements Serializable {
                 .getBody();
 		
 		System.out.println("Claims: "+body.toString());
-		String[] userName=body.get("pb_name").toString().split(" ");
-		String firstName,lastName;
-		if(userName.length>2)
+		String firstName="",lastName="";
+		String[] userName=null;
+		if(body.get("pb_name")==null)
 		{
-			firstName=userName[0]+" "+userName[1];
-			lastName=userName[2];
+			firstName="";
+			lastName="";
 		}
 		else
 		{
-			firstName=userName[0];
-			try
+			userName=body.get("pb_name").toString().split(" ");
+			if(userName.length>2)
 			{
-				lastName=userName[1];
+				firstName=userName[0]+" "+userName[1];
+				lastName=userName[2];
 			}
-			catch(Exception e)
+			else
 			{
-				lastName="";
+				firstName=userName[0];
+				try
+				{
+					lastName=userName[1];
+				}
+				catch(Exception e)
+				{
+					lastName="";
+				}
 			}
 		}
 		System.out.println("First name: "+firstName);
 		System.out.println("Last name: "+lastName);
-		String mobNo=body.get("pb_mobile").toString().replace(" ", "");
+		String mobNo="";
+		if(body.get("pb_mobile")==null)
+			mobNo="";
+		else
+			mobNo=body.get("pb_mobile").toString().replace(" ", "");
 		String upToNCharacters = mobNo.substring(0, Math.min(mobNo.length(), 3));
 		System.out.println("Mobile 3 char: "+upToNCharacters);
 		if(!upToNCharacters.contains("+91"))
@@ -138,9 +151,17 @@ public class JwtTokenUtil implements Serializable {
 		else
 			mobNo=mobNo.substring(3);
 		System.out.println("Mobile no: "+mobNo);
-		String emailID=body.get("pb_email").toString().toLowerCase();
+		String emailID="";
+		if(body.get("pb_email")==null)
+			emailID="";
+		else
+			emailID=body.get("pb_email").toString().toLowerCase();
 		ReferralLeads rl=new ReferralLeads();
-		ReferralLeads updateRl=refRepo.getRlDetails(emailID,mobNo,body.get("pb_organization").toString());
+		ReferralLeads updateRl;
+		if(body.get("pb_organization")==null)
+			updateRl=refRepo.getRlDetails(emailID,mobNo,"");
+		else
+			updateRl=refRepo.getRlDetails(emailID,mobNo,body.get("pb_organization").toString());
 		System.out.println("ReferralLeads: "+updateRl);
 		if(updateRl==null ) {
 			System.out.println("Saving Referral leads....");
@@ -161,10 +182,21 @@ public class JwtTokenUtil implements Serializable {
 			rl.setAddress(""+body.get("pb_street"));
 			rl.setCity(""+body.get("pb_city"));
 			rl.setState(""+body.get("pb_state"));
-			rl.setCountry(""+body.get("pb_country").toString().toUpperCase());
+			if(body.get("pb_country")==null)
+				rl.setCountry("INDIA");
+			else
+				rl.setCountry(""+body.get("pb_country").toString().toUpperCase());
 			rl.setPincode(""+body.get("pb_pincode"));
 			//rl.setMembershipStatus("Paid Member");
-			rl.setMembershipStatus(""+body.get("pb_membership"));
+			if(referType.equalsIgnoreCase("rxil"))
+			{
+				if(body.get("pb_membership").toString().equalsIgnoreCase("NonMember"))
+					rl.setMembershipStatus(""+body.get("pb_membership"));
+				else
+					rl.setMembershipStatus("Member");
+			}
+			else
+				rl.setMembershipStatus(""+body.get("pb_membership"));
 			rl.setRedirectUrl(""+body.get("pb_redirecturl"));
 			rl.setIec(""+body.get("pb_iec"));
 			rl.setFax(""+body.get("pb_fax"));
@@ -197,7 +229,10 @@ public class JwtTokenUtil implements Serializable {
 			updateRl.setAddress(""+body.get("pb_street"));
 			updateRl.setCity(""+body.get("pb_city"));
 			updateRl.setState(""+body.get("pb_state"));
-			updateRl.setCountry(""+body.get("pb_country").toString().toUpperCase());
+			if(body.get("pb_country")==null)
+				updateRl.setCountry("INDIA");
+			else
+				updateRl.setCountry(""+body.get("pb_country").toString().toUpperCase());
 			updateRl.setPincode(""+body.get("pb_pincode"));
 			//rl.setMembershipStatus("Paid Member");
 			updateRl.setMembershipStatus(""+body.get("pb_membership"));
@@ -240,7 +275,7 @@ public class JwtTokenUtil implements Serializable {
 			if(flag.equalsIgnoreCase("save")) {
 				String rid = refernceId.uniqueNumberReferenceId();
 				
-				refer.setReferenceId(rid);
+				refer.setReferenceId(rl.getLeadId().toString());
 				refer.setUserid(cusdetails);
 				refer.setFirstName(rl.getFirstName());
 				refer.setLastName(rl.getLastName());
@@ -284,7 +319,7 @@ public class JwtTokenUtil implements Serializable {
 			System.out.println("Exception: "+e);
 			String rid = refernceId.uniqueNumberReferenceId();
 			
-			refer.setReferenceId(rid);
+			refer.setReferenceId(rl.getLeadId().toString());
 			refer.setUserid(cusdetails);
 			refer.setFirstName(rl.getFirstName());
 			refer.setLastName(rl.getLastName());

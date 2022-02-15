@@ -80,6 +80,16 @@ public interface LCRepository extends JpaRepository<NimaiLC, String>{
 	@Query(value="SELECT CREDIT_EXHAUST from nimai_subscription_details where userid=(:userId) and status='ACTIVE'", nativeQuery = true )
 	Date findCreditExhaust(@Param("userId") String userId);
 	
+	@Query(value="SELECT status from nimai_subscription_details \r\n" + 
+			"where userid=(:userId) order by spl_serial_number desc limit 1", nativeQuery = true )
+	String findLatestStatusForSubscription(@Param("userId") String userId);
+	
+	@Query(value="SELECT lc_count from nimai_subscription_details where userid=(:userId) order by spl_serial_number desc limit 1", nativeQuery = true )
+	Integer findLCCountForInactive(@Param("userId") String userId);
+
+	@Query(value="SELECT ifnull(LC_UTILIZED_COUNT,0) from nimai_subscription_details where userid=(:userId) order by spl_serial_number desc limit 1", nativeQuery = true )
+	Integer findUtilzedLCCountForInactive(@Param("userId") String userId);
+	
 	@Query(value="select count(*) from nimai_f_intcountry where country_name=(:countryName)", nativeQuery = true)
 	Integer getBanksCountForCountry(String countryName);
 
@@ -96,4 +106,6 @@ public interface LCRepository extends JpaRepository<NimaiLC, String>{
 	@Modifying
 	@Query(value= "update temp_transaction set transaction_id=(:newtid) where transaction_id=(:transactionId)", nativeQuery = true)
 	void updateTransactionIdByNew(String transactionId, String newtid);
+	
+	
 }

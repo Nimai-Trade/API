@@ -431,6 +431,9 @@ public class LCServiceImpl implements LCService {
 	public String confirmLCDet(String transId, String userId) {
 		// TODO Auto-generated method stub
 		// lcrepo.insertIntoMaster(transId, userId);
+		System.out.println("------ IN confirmLCDet method --------");
+		System.out.println("transId: "+transId);
+		System.out.println("userId: "+userId);
 		EntityManager entityManager = em.createEntityManager();
 		try {
 			StoredProcedureQuery storedProcedureQuery = entityManager.createStoredProcedureQuery("move_to_master",
@@ -2595,11 +2598,12 @@ public class LCServiceImpl implements LCService {
 		}
 	}
 
-	@Override
+	/*@Override
 	public List<ResponseEntity<Object>> saveTempLc(NimaiClient subscriptionDettails,NimaiLCBean nimailc) {
 		GenericResponse response = new GenericResponse<>();
 		
 		return	subscriptionDettails.getSubscriptionDettails().stream().filter(t -> t.getStatus().equalsIgnoreCase("ACTIVE")).map(request->{
+		//return	subscriptionDettails.getSubscriptionDettails().stream().map(request->{
 			
 			Integer lcCount=Integer.valueOf(request.getlCount());
 			Integer utilizedLcCount=request.getLcUtilizedCount();
@@ -2634,19 +2638,20 @@ public class LCServiceImpl implements LCService {
 					}
 					
 					String sts = confirmLCDet(transId, userId);
-					
+					System.out.println("sts: "+sts);
 					
 					if (sts.equals("Validation Success")) 
 					{
-						/*String lcCountry=lcservice.getLCIssuingCountryByTransId(transId);
-						String lcCurrency=lcservice.getLCCurrencyByTransId(transId);
-						Integer tenorDays=lcservice.getLCTenorDays(transId);
-						Double lcValue=lcservice.getLCValue(transId);
-						lcservice.insertDataForSavingInput(lcCountry,lcCurrency,lcValue,);*/
-					
-						NimaiLCMaster drafDet = lcmasterrepo.findByTransactionIdUserId(transId, userId);
+						//String lcCountry=lcservice.getLCIssuingCountryByTransId(transId);
+						//String lcCurrency=lcservice.getLCCurrencyByTransId(transId);
+						//Integer tenorDays=lcservice.getLCTenorDays(transId);
+						//Double lcValue=lcservice.getLCValue(transId);
+						//lcservice.insertDataForSavingInput(lcCountry,lcCurrency,lcValue,);
 						
+						NimaiLCMaster drafDet = lcmasterrepo.findByTransactionIdUserId(transId, userId);
+						System.out.println("draftDet: "+draftDet);
 						NimaiLCMaster lcDetails1=convertAndUpdateStatus(drafDet);
+						System.out.println("lcDetails1: "+lcDetails1);
 						if(!lcDetails1.getTransactionStatus().equalsIgnoreCase("Pending"))
 						{
 							getAlleligibleBAnksEmail(userId, transId,0,"LC_UPLOAD_ALERT_ToBanks","LC_UPLOAD(DATA)");
@@ -2688,8 +2693,112 @@ public class LCServiceImpl implements LCService {
 //		response.setErrMessage("You are not Subscribe to a Plan. Please Subscribe");
 //		return (List<ResponseEntity<Object>>) new ResponseEntity<Object>(response, HttpStatus.OK);
 //	}
-	}
+	}*/
 
+	@Override
+	public ResponseEntity<Object> saveTempLc(NimaiClient subscriptionDettails,NimaiLCBean nimailc) {
+		GenericResponse response = new GenericResponse<>();
+		Integer lcCount=0,utilizedLcCount=0;
+		if(!subscriptionDettails.getSubscriptionDettails().get(0).getStatus().equalsIgnoreCase("inactive"))
+		{
+			lcCount=Integer.valueOf(subscriptionDettails.getSubscriptionDettails().get(0).getlCount());
+			utilizedLcCount=subscriptionDettails.getSubscriptionDettails().get(0).getLcUtilizedCount();
+		}
+		else
+		{
+			lcCount=lcrepo.findLCCountForInactive(subscriptionDettails.getUserid());
+			utilizedLcCount=lcrepo.findUtilzedLCCountForInactive(subscriptionDettails.getUserid());
+		}
+			System.out.println("lcCount: "+lcCount);
+			System.out.println("utilizedLcCount: "+utilizedLcCount);
+			System.out.println("Credit Boundary: "+creditBoundary);
+			if (lcCount > (utilizedLcCount-Integer.valueOf(creditBoundary))) 
+			{
+				try 
+				{
+					String transId = nimailc.getTransactionId();
+					String userId = nimailc.getUserId();
+					System.out.println(transId + " " + userId);
+					//Date validityDate=lcservice.getValidityDate(transId,userId);
+					NimaiLC draftDet=lcrepo.findByTransactionIdUserId(transId,userId);
+					
+					Date today=new Date();
+					Calendar cal1 = Calendar.getInstance();
+					Calendar cal2 = Calendar.getInstance();
+					cal1.setTime(draftDet.getValidity());
+					cal1.add(Calendar.DATE, 1);
+					cal2.setTime(today);
+					System.out.println("Validity Date: "+cal1);
+					System.out.println("Today Date: "+cal2);
+					if(cal1.compareTo(cal2)<0)
+					//(cal1.get(Calendar.DAY_OF_YEAR) < cal2.get(Calendar.DAY_OF_YEAR) ||
+					//		cal1.get(Calendar.MONTH) < cal2.get(Calendar.MONTH) 
+						//|| cal1.get(Calendar.YEAR) < cal2.get(Calendar.YEAR))
+					{
+						response.setStatus("Failure");
+						response.setErrMessage("Please select correct transaction validity date");
+						return new ResponseEntity<Object>(response, HttpStatus.OK);
+			
+					}
+					
+					String sts = confirmLCDet(transId, userId);
+					System.out.println("sts: "+sts);
+					
+					if (sts.equals("Validation Success")) 
+					{
+						//String lcCountry=lcservice.getLCIssuingCountryByTransId(transId);
+						//String lcCurrency=lcservice.getLCCurrencyByTransId(transId);
+						//Integer tenorDays=lcservice.getLCTenorDays(transId);
+						//Double lcValue=lcservice.getLCValue(transId);
+						//lcservice.insertDataForSavingInput(lcCountry,lcCurrency,lcValue,);
+						
+						NimaiLCMaster drafDet = lcmasterrepo.findByTransactionIdUserId(transId, userId);
+						System.out.println("draftDet: "+draftDet);
+						NimaiLCMaster lcDetails1=convertAndUpdateStatus(drafDet);
+						System.out.println("lcDetails1: "+lcDetails1);
+						if(!lcDetails1.getTransactionStatus().equalsIgnoreCase("Pending"))
+						{
+							getAlleligibleBAnksEmail(userId, transId,0,"LC_UPLOAD_ALERT_ToBanks","LC_UPLOAD(DATA)");
+						}
+						response.setStatus("Success");
+						response.setErrCode(lcDetails1.getTransactionStatus());
+						response.setData(sts);
+						return new ResponseEntity<Object>(response, HttpStatus.OK);
+					}
+						
+					
+					else 
+					{
+						response.setStatus("Failure");
+						response.setErrMessage(sts);
+						return new ResponseEntity<Object>(response, HttpStatus.OK);
+					}
+				} 
+				catch (Exception e) 
+				{
+					System.out.println("Exception: "+e);
+					response.setStatus("Failure");
+					response.setErrCode("EXE000");
+					response.setErrMessage(ErrorDescription.getDescription("EXE000") + e);
+					return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
+				}
+			} 
+			else 
+			{
+				response.setStatus("Failure");
+				response.setErrMessage("You had reached maximum LC Count!");
+				return new ResponseEntity<Object>(response, HttpStatus.OK);
+			}
+		}
+//	}catch(Exception e) {
+//		e.printStackTrace();
+//		response.setStatus("Failure");
+//		System.out.println("You are not Subscribe to a Plan. Please Subscribe");
+//		response.setErrMessage("You are not Subscribe to a Plan. Please Subscribe");
+//		return (List<ResponseEntity<Object>>) new ResponseEntity<Object>(response, HttpStatus.OK);
+//	}
+	
+	
 	@Override
 	public List<Goods> getGoodsList() {
 		// TODO Auto-generated method stub

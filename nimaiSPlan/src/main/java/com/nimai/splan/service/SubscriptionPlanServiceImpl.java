@@ -380,8 +380,10 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 								else
 									days = (int) ((plan.getSubscriptionEndDate().getTime() - today.getTime())
 											/ (1000 * 60 * 60 * 24)) + 1;
-
-								addOnCredit = (Integer.valueOf(plan.getlCount()) - plan.getLcUtilizedCount());
+								if(!plan.getPaymentStatus().equalsIgnoreCase("Rejected"))
+									addOnCredit = (Integer.valueOf(plan.getlCount()) - plan.getLcUtilizedCount());
+								else
+									addOnCredit = 0;
 								System.out.println("addOnCredit:" + addOnCredit);
 
 							}
@@ -405,8 +407,11 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 						}
 						if (noOfDays < 60 && (Integer.valueOf(inactiveSubscriptionEntity.getlCount())
 								- inactiveSubscriptionEntity.getLcUtilizedCount()) > 0) {
-							addOnCredit = (Integer.valueOf(inactiveSubscriptionEntity.getlCount())
+							if(!inactiveSubscriptionEntity.getPaymentStatus().equalsIgnoreCase("Rejected"))
+								addOnCredit = (Integer.valueOf(inactiveSubscriptionEntity.getlCount())
 									- inactiveSubscriptionEntity.getLcUtilizedCount());
+							else
+								addOnCredit=0;
 						}
 						
 					}
@@ -494,6 +499,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 					System.out.println("Grand Amount after save: "+subScription.getGrandAmount());
 					//userRepository.updateKycStatus(true, mCustomer.get().getUserid());
 					if (subscriptionRequest.getModeOfPayment().equalsIgnoreCase("Wire")) {
+						advService.inactiveVASStatus(userId);
 						userRepository.updatePaymentStatus(mCustomer.get().getUserid());
 						userRepository.updatePlanPurchasedStatus(mCustomer.get().getUserid());
 						String invoiceId=generatePaymentTtransactionID(10);
@@ -690,6 +696,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 						responseBean.setDiscount(temp.getDiscount());
 						responseBean.setGrandAmount(temp.getGrandAmount());
 						responseBean.setSubsStartDate(temp.getInsertedDate());
+						responseBean.setInvoiceId(temp.getInvoiceId());
 						subscriptionBean.add(responseBean);
 						response.setData(subscriptionBean);
 
@@ -711,6 +718,66 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 		return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
 	}
 
+	@Override
+	public ResponseEntity<?> getInactiveSPlanByUserId(String userId) {
+		GenericResponse response = new GenericResponse<>();
+		logger.info(" ================ getInactiveSPlanByUserId method Invoked ================");
+		try {
+			List<NimaiSubscriptionDetails> subscriptionEntity = subscriptionDetailsRepository.findAllInactivePlanByUserId(userId);
+			if (subscriptionEntity.isEmpty()) {
+				response.setStatus("Failure");
+				response.setErrCode("ASA002");
+				response.setErrMessage(ErrorDescription.getDescription("ASA002"));
+				return new ResponseEntity<Object>(response, HttpStatus.OK);
+			} else {
+				//SimpleDateFormat formatter = new SimpleDateFormat("dd-M-yyyy hh:mm:ss");  
+				List<SubscriptionPlanResponse> subscriptionBean = new ArrayList<SubscriptionPlanResponse>();
+				//OnlinePayment onlinePayDet=onlinePaymentRepo.getDetailsByUserId(userId);
+				for (NimaiSubscriptionDetails temp : subscriptionEntity) {
+					SubscriptionPlanResponse responseBean = new SubscriptionPlanResponse();
+					
+					if (temp.getStatus().equalsIgnoreCase("INACTIVE") && temp.getFlag() == 0) {
+
+						responseBean.setSubscriptionAmount(temp.getSubscriptionAmount());
+						responseBean.setSubscriptionName(temp.getSubscriptionName());
+						responseBean.setSubscriptionId(temp.getSubscriptionId());
+						responseBean.setSubscriptionValidity(temp.getSubscriptionValidity());
+						responseBean.setLcCount(temp.getlCount());
+						responseBean.setRemark(temp.getRemark());
+						responseBean.setUserId(temp.getUserid().getUserid());
+						responseBean.setStatus(temp.getStatus());
+						
+						responseBean.setSubsidiaries(temp.getSubsidiaries());
+						responseBean.setRelationshipManager(temp.getRelationshipManager());
+						responseBean.setCustomerSupport(temp.getCustomerSupport());
+						responseBean.setIsVasApplied(temp.getIsVasApplied());
+						responseBean.setVasAmount(temp.getVasAmount());
+						responseBean.setDiscountId(temp.getDiscountId());
+						responseBean.setDiscount(temp.getDiscount());
+						responseBean.setGrandAmount(temp.getGrandAmount());
+						responseBean.setSubsStartDate(temp.getInsertedDate());
+						responseBean.setInvoiceId(temp.getInvoiceId());
+						subscriptionBean.add(responseBean);
+						response.setData(subscriptionBean);
+
+						return new ResponseEntity<Object>(response, HttpStatus.OK);
+					} else {
+						response.setStatus("Failure");
+						response.setErrCode("ASA008");
+						response.setErrMessage(ErrorDescription.getDescription("ASA008"));
+						return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
+					}
+				}
+			}
+		} catch (Exception e) {
+			response.setStatus("Failure");
+			response.setErrCode("EXE000");
+			response.setErrMessage(ErrorDescription.getDescription("EXE000") + e.getMessage());
+			return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
+		}
+		return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
+	}
+	
 	@Override
 	public ResponseEntity<?> findMSPlanDetails(String userId) {
 		GenericResponse response = new GenericResponse<>();
@@ -1924,6 +1991,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
 				s.setInvoiceId(((Object[])d)[0]==null?"null":((Object[])d)[0].toString());
 				s.setInsertedDate(((Object[])d)[1]==null?new Date(0):(Date)simpleDateFormat.parse(((Object[])d)[1].toString()));
 				s.setPaymentStatus(((Object[])d)[2]==null?"null":((Object[])d)[2].toString());
+				s.setSplSerialNo(((Object[])d)[3]==null?0:Integer.valueOf(((Object[])d)[3].toString()));
 				sp.add(s);
 			}
 		}

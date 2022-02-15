@@ -33,6 +33,8 @@ public interface SubscriptionPlanService {
 
 	ResponseEntity<?> findCustomerSPlanDetails(SplanRequest splanRequest);
 
+	public ResponseEntity<?> getInactiveSPlanByUserId(String userId);
+	
 	//SubscriptionPaymentBean initiatePayment(SubscriptionPaymentBean sPymentRequest);
 	
 	Map<String, Object> initiatePayment(SubscriptionPaymentBean sPymentRequest, Double grandAmt, String subsCurrency) throws PayPalRESTException;

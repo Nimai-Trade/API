@@ -31,6 +31,9 @@ public interface ReferRepository extends JpaRepository<Refer, String> {
 
 	@Query(value="select nc.USERID from nimai_m_customer nc where nc.EMAIL_ADDRESS=:emailId ", nativeQuery = true )
 	String getUserIdByEmail(@Param("emailId") String emailId);
+	
+	@Query(value="select * from nimai_m_refer nc where nc.EMAIL_ADDRESS=:emailId order by nc.id desc limit 1", nativeQuery = true )
+	Refer getDataByEmail(@Param("emailId") String emailId);
 
 	
 }

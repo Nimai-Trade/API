@@ -92,7 +92,8 @@ import javax.validation.constraints.NotNull;
 	@StoredProcedureParameter(mode = ParameterMode.OUT, name = "OUT_grand_amount", type = Integer.class),
 	@StoredProcedureParameter(mode = ParameterMode.OUT, name = "OUT_discount_id", type = Integer.class),
 	@StoredProcedureParameter(mode = ParameterMode.OUT, name = "OUT_discount_amount", type = Double.class),
-	@StoredProcedureParameter(mode = ParameterMode.OUT, name = "OUT_TNC_DATE", type = Date.class)
+	@StoredProcedureParameter(mode = ParameterMode.OUT, name = "OUT_TNC_DATE", type = Date.class),
+	@StoredProcedureParameter(mode = ParameterMode.OUT, name = "OUT_CREDIT_INACTIVE_COUNT", type = Integer.class)
 	})
 })
 public class NimaiMCustomer implements Serializable {

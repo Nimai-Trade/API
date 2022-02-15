@@ -169,7 +169,9 @@ public interface LCService {
 
 	public NimaiClient checkMasterSubsidiary(String accountType, String userId,NimaiClient userDetails);
 
-	public List<ResponseEntity<Object>> saveTempLc(NimaiClient obtainUserId, NimaiLCBean nimailc);
+	//public List<ResponseEntity<Object>> saveTempLc(NimaiClient obtainUserId, NimaiLCBean nimailc);
+	
+	public ResponseEntity<Object> saveTempLc(NimaiClient obtainUserId, NimaiLCBean nimailc);
 
 	public List<Goods> getGoodsList();
 

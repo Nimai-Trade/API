@@ -17,6 +17,12 @@ public interface SubscriptionPlanRepository extends JpaRepository<NimaiSubscript
 
 	@Query("FROM NimaiSubscriptionDetails n where n.userid.userid = :userId and Status = 'Active'")
 	List<NimaiSubscriptionDetails> findAllByUserId(String userId);
+	
+	@Query("FROM NimaiSubscriptionDetails n where n.userid.userid = :userId and Status = 'Active' and paymentStatus!='Rejected'")
+	List<NimaiSubscriptionDetails> findAllByUserIdExpReject(String userId);
+	
+	@Query(value = "select * FROM nimai_subscription_details where userid = :userId and Status = 'Inactive' ORDER BY SPL_SERIAL_NUMBER DESC LIMIT 1", nativeQuery = true)
+	List<NimaiSubscriptionDetails> findAllInactivePlanByUserId(String userId);
 
 	@Query("FROM NimaiSubscriptionDetails n where n.userid.userid = :userId and n.status = 'Active'")
 	NimaiSubscriptionDetails findByUserId(String userId);
@@ -94,10 +100,27 @@ public interface SubscriptionPlanRepository extends JpaRepository<NimaiSubscript
 	@Query(value = "select subscription_amount from nimai_m_subscription where subscription_id=:subscriptionId and status='ACTIVE'", nativeQuery = true)
 	Integer getSubscriptionAmt(String subscriptionId);
 	
-	@Query(value = "SELECT nsd.INVOICE_ID,nsd.INSERTED_DATE,nsd.PAYMENT_STATUS \n" + 
+	/*@Query(value = "SELECT nsd.INVOICE_ID,nsd.INSERTED_DATE,nsd.PAYMENT_STATUS \n" + 
 			"FROM nimai_subscription_details nsd where\n" + 
 			"(nsd.STATUS!='Active' or nsd.PAYMENT_STATUS='Rejected') and nsd.userid=:userId \n" + 
-			"order by nsd.SPL_SERIAL_NUMBER desc", nativeQuery = true)
+			"order by nsd.SPL_SERIAL_NUMBER desc", nativeQuery = true)*/
+	@Query(value = "select result.INVOICE_ID,result.INSERTED_DATE,result.PAYMENT_STATUS,\n" + 
+			"result.SPL_SERIAL_NUMBER\n" + 
+			"from\n" + 
+			"(SELECT nsd.INVOICE_ID,nsd.INSERTED_DATE,nsd.PAYMENT_STATUS,\n" + 
+			"nsd.SPL_SERIAL_NUMBER \n" + 
+			"	FROM nimai_subscription_details nsd\n" + 
+			"	where\n" + 
+			"	(nsd.STATUS!='Active' or nsd.PAYMENT_STATUS='Rejected') \n" + 
+			"	and nsd.userid=:userId \n" + 
+			"	union\n" + 
+			"	SELECT nsv.INVOICE_ID,nsv.INSERTED_DATE,nsv.PAYMENT_STATUS,\n" + 
+			"	nsv.SPL_SERIAL_NUMBER \n" + 
+			"	FROM nimai_subscription_vas nsv\n" + 
+			"	where\n" + 
+			"	(nsv.SPLAN_VAS_FLAG=0 and (nsv.STATUS!='Active' or nsv.PAYMENT_STATUS='Rejected')) \n" + 
+			"	and nsv.userid=:userId) result\n" + 
+			"	order by result.SPL_SERIAL_NUMBER desc", nativeQuery = true)
 	List getPreviousSubscription(String userId);
 
 	//@Modifying
