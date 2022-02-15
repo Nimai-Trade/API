@@ -40,6 +40,19 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 			"order by cpb.id;", nativeQuery = true )
 	List<QuotationMaster> findAllQuotationByUserIdAndTransactionId(@Param("userId") String userId,@Param("transactionId") String transactionId);
 
+	@Query(value="SELECT qu.* from get_all_quotation qu\r\n" + 
+			"where qu.userid=:userId\r\n" + 
+			"and qu.transaction_id=:transactionId\r\n" + 
+			"and (qu.validity_date>=curdate() and\r\n" + 
+			"(qu.quotation_status NOT IN ('Rejected','Expired','ExpPlaced','Withdrawn')\r\n" + 
+			"OR qu.quotation_status IS NULL))\r\n" + 
+			"group by qu.bank_userid;", nativeQuery = true )
+	List<QuotationMaster> findAllQuotationByUserIdAndTransactionIdExpPreferred(@Param("userId") String userId,@Param("transactionId") String transactionId);
+
+	@Query(value="SELECT cpb.* FROM customer_preferred_banks cpb WHERE cpb.cust_userid=:userId", nativeQuery = true )
+	List findPreferredBank(@Param("userId") String userId);
+
+	
 	@Query(value="SELECT * from get_all_quotation where userid=(:userId) and transaction_id=(:transactionId) and (quotation_status like '%Placed')", nativeQuery = true )
 	List<QuotationMaster> findAllReplacedQuotationByUserIdAndTransactionId(@Param("userId") String userId,@Param("transactionId") String transactionId);
 

@@ -408,7 +408,13 @@ public class QuotationServiceImpl implements QuotationService {
 		// TODO Auto-generated method stub
 		//return quotationMasterRepo.findAllQuotationByUserIdAndTransactionId(userId, transactionId);
 		List<QuotationMasterBean> qmList = new ArrayList<>();
-		List<QuotationMaster> listOfQuotations=quotationMasterRepo.findAllQuotationByUserIdAndTransactionId(userId, transactionId);
+		List<QuotationMaster> listOfQuotations;
+		List preferBank=quotationMasterRepo.findPreferredBank(userId);
+		if(preferBank.isEmpty())
+			listOfQuotations=quotationMasterRepo.findAllQuotationByUserIdAndTransactionIdExpPreferred(userId, transactionId);
+		else
+			listOfQuotations=quotationMasterRepo.findAllQuotationByUserIdAndTransactionId(userId, transactionId);
+		
 		ModelMapperUtil modelMapper = new ModelMapperUtil();
 		for(QuotationMaster qm:listOfQuotations)
 		{
@@ -418,9 +424,9 @@ public class QuotationServiceImpl implements QuotationService {
 			qmb.setNoOfGoodsByBank(quotationMasterRepo.getGoodsCount(qmb.getGoods(), qm.getBankUserId()));
 			String prefer=quotationMasterRepo.getPreferredBank(qm.getUserId(),qm.getBankUserId());
 			if(prefer==null || prefer.equalsIgnoreCase(""))
-				qmb.setPreferred("Preferred");
-			else
 				qmb.setPreferred("No");
+			else
+				qmb.setPreferred("Preferred");
 			qmb.setRating(quotationMasterRepo.getRating(qm.getBankUserId()));
 			qmList.add(qmb);
 		}

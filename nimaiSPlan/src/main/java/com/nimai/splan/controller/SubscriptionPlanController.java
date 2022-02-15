@@ -187,6 +187,13 @@ public class SubscriptionPlanController {
 	}
 	
 	@CrossOrigin("*")
+	@GetMapping("/getInactiveSPlan/{userId}")
+	public ResponseEntity<?> getInactiveSPlanByUserId(@PathVariable("userId") String userId) {
+		logger.info(" ================ Send getInactiveSPlanByUserId API is Invoked ================:" + userId);
+		return sPlanService.getInactiveSPlanByUserId(userId);
+	}
+		
+	@CrossOrigin("*")
 	@PostMapping("/viewCustomerSPlan")
 	public ResponseEntity<?> ViewCustomerSPlans(@RequestBody SplanRequest sPLanRequest) {
 		logger.info(" ================ Send ViewCustomerSPlans API is Invoked ================:"

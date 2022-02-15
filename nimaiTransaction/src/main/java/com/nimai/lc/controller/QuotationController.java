@@ -185,10 +185,11 @@ public class QuotationController
 			System.out.println("Counts for Bank User: " + obtainUserId);
 			System.out.println("LC Count: " + lcCount);
 			System.out.println("LC Utilzed Count: " + utilizedLcCount);
-			if (lcCount - (utilizedLcCount-Integer.valueOf(creditBoundary)) == 0) 
+			//if (lcCount - (utilizedLcCount-Integer.valueOf(creditBoundary)) == 0)
+			if (lcCount - utilizedLcCount == 0)
 			{
 				response.setStatus("Failure");
-				response.setErrMessage("Your Credit has been exhaust. Please Select Subscription Plan.");
+				response.setErrMessage("Please subscribe to a Plan, as your credit limit has been exhausted.");
 				return new ResponseEntity<Object>(response, HttpStatus.OK);
 			}
 			else
@@ -405,11 +406,32 @@ public class QuotationController
 	public ResponseEntity<?> getAllDetailByUserIdAndTransactionId(@RequestBody QuotationBean quotationbean) {
 		logger.info("=========== Get all Quotation Received By UserId and TransactionId ===========");
 		GenericResponse response = new GenericResponse<>();
+		Integer lcCount=0,utilizedLcCount=0;
 		String transactionId = quotationbean.getTransactionId();
 		String userId=quotationbean.getUserId();
 		
 		System.out.println(""+transactionId);
 		System.out.println(""+userId);
+		
+		NimaiLCMaster transDetails=lcservice.checkTransaction(transactionId);
+		Date creditExhaustDate=lcservice.getCreditExhaust(userId);
+		lcCount = lcservice.getLcCount(userId);
+		utilizedLcCount = lcservice.getUtilizedLcCount(userId);
+		System.out.println("lcCount: "+lcCount);
+		System.out.println("utilizedLcCount: "+utilizedLcCount);
+		System.out.println("Credit Exhaust Date: "+creditExhaustDate);
+		if(lcCount==null && creditExhaustDate==null)
+		{
+			response.setStatus("Failure");
+			response.setErrMessage("Please subscribe to a Plan, as your current plan has expired or your credit limit has been exhausted");
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		}
+		if ((lcCount - utilizedLcCount < 0) && transDetails.getInsertedDate().after(creditExhaustDate)) 
+		{
+			response.setStatus("Failure");
+			response.setErrMessage("Please subscribe to a Plan, as your current plan has expired or your credit limit has been exhausted");
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		}
 		List<QuotationMasterBean> quotations = quotationService.getQuotationDetailByUserIdAndTransactionId(userId,transactionId);
 		
 		if (quotations == null || quotations.isEmpty()) {

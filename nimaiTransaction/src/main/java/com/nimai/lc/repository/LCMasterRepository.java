@@ -277,7 +277,7 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 	//@Query(value = "select avg_spread from nimai_m_savings_input where country_name=(:lcCountry) and currency=(:lcCurrency) ORDER BY id DESC LIMIT 1", nativeQuery = true)
 	//Double getAvgSpread(String lcCountry, String lcCurrency);
 
-	@Query(value = "SELECT lc_value from nimai_mm_transaction where transaction_id=(:transId)", nativeQuery = true)
+	@Query(value = "SELECT usd_currency_value from nimai_mm_transaction where transaction_id=(:transId)", nativeQuery = true)
 	Double getLCValueByTransId(String transId);
 
 	@Query(value = "SELECT transaction_id,requirement_type,lc_currency,inserted_date,modified_date,transaction_status,lc_issuance_country,branch_user_email from get_all_transaction where user_id=(:userid) and branch_user_email=(:emailid) and inserted_date>=(:fromDate) order by inserted_date desc", nativeQuery = true)
@@ -299,6 +299,9 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 	
 	@Query("SELECT lc FROM NimaiLCMaster lc WHERE lc.transactionId= (:transactionId) and lc.userId=(:userId)")
 	NimaiLCMaster findByTransactionIdUserId(@Param("transactionId")String transId, @Param("userId") String userId);
+	
+	@Query(value = "SELECT status from nimai_subscription_details where userid=(:userId) order by SPL_SERIAL_NUMBER desc limit 1", nativeQuery = true)
+	String findActivePlanByUserId(String userId);
 	
 	
 }
