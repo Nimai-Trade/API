@@ -104,12 +104,18 @@ public class LCController {
 		logger.info("=========== Save LC To Draft ===========");
 		GenericResponse response = new GenericResponse<>();
 		// GenericResponse<Object> response = new GenericResponse<Object>();
-
+		String userId=nimailcbean.getUserId();
 		String statusString = "success"; // this.lcValid.validateLCDetails(nimailcbean);
 		if (statusString.equalsIgnoreCase("Success")) {
 			try {
-				String tid = generateTransactionId(nimailcbean.getUserId(), nimailcbean.getRequirementType(),
+				if(nimailcbean.getUserId()==null)
+				{
+					System.out.println("UserID is null");
+					userId=lcrepo.getUserIdByApplicantNameBeneName(nimailcbean.getApplicantName(),nimailcbean.getBeneName());
+				}
+				String tid = generateTransactionId(userId, nimailcbean.getRequirementType(),
 						nimailcbean.getlCIssuanceCountry());
+				nimailcbean.setUserId(userId);
 				lcservice.saveLCdetails(nimailcbean, tid);
 
 				response.setStatus("Success");
@@ -443,6 +449,31 @@ public class LCController {
 	 */
 
 	@CrossOrigin(value = "*", allowedHeaders = "*")
+	@RequestMapping(value = "/getNewRequestsForBankSecondary", produces = "application/json", method = RequestMethod.POST)
+	public ResponseEntity<?> getTransactionForBankSecondary(@RequestBody NimaiLCBean nimailcbean) {
+		logger.info("=========== Get new Request for Bank Secondary ===========");
+		GenericResponse response = new GenericResponse<>();
+		String userid = nimailcbean.getUserId();
+		//String requirement=nimailcbean.getRequirementType();
+		// List<NimaiLCMaster> transactions =
+		// lcservice.getAllTransactionForBank(userid);
+		String obtainUserId = userid;
+		// lcservice.checkMasterForSubsidiary(userid);
+		List<NimaiLCMaster> newRequest = lcservice.getAllTransactionForBankSec(obtainUserId);
+		if (newRequest.isEmpty()) {
+			response.setStatus("Failure");
+			response.setErrCode("ASA002");
+			response.setErrMessage(ErrorDescription.getDescription("ASA002"));
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		} else {
+			response.setData(newRequest);
+			response.setStatus("Success");
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		}
+
+	}
+	
+	@CrossOrigin(value = "*", allowedHeaders = "*")
 	@RequestMapping(value = "/getAllNewRequestsForBank", produces = "application/json", method = RequestMethod.POST)
 	public ResponseEntity<?> getTransactionForBank(@RequestBody NimaiLCBean nimailcbean) {
 		logger.info("=========== Get new Request for Bank ===========");
@@ -505,6 +536,7 @@ public class LCController {
 		GenericResponse response = new GenericResponse<>();
 		String userId = nimailcbean.getUserId();
 		String branchEmailId = nimailcbean.getBranchUserEmail();
+		
 		List<NimaiLC> draftTransactions = lcservice.getAllDraftTransactionDetails(userId, branchEmailId);
 		if (draftTransactions.isEmpty()) {
 			response.setStatus("Failure");
@@ -524,12 +556,17 @@ public class LCController {
 	public ResponseEntity<Object> updateDraftLCdetails(@RequestBody NimaiLCBean nimailcbean) {
 		logger.info("=========== Updating draft LC ===========");
 		GenericResponse response = new GenericResponse<>();
-
+		String userId=nimailcbean.getUserId();
 		String statusString = "Success";// this.lcValid.validateLCDetails(nimailcbean);
 		if (statusString.equalsIgnoreCase("Success")) {
 			try {
-				String newtid = generateTransactionId(nimailcbean.getUserId(), nimailcbean.getRequirementType(),
+				if(nimailcbean.getUserId()==null)
+				{
+					userId=lcrepo.getUserIdByApplicantNameBeneName(nimailcbean.getApplicantName(),nimailcbean.getBeneName());
+				}
+				String newtid = generateTransactionId(userId, nimailcbean.getRequirementType(),
 						nimailcbean.getlCIssuanceCountry());
+				nimailcbean.setUserId(userId);
 				lcservice.updateDraftLCdetails(nimailcbean, newtid);
 				response.setStatus("Success");
 				response.setData(newtid);
@@ -612,7 +649,8 @@ public class LCController {
 				}
 				System.out.println("Reopen Counter: " + reopenCounter);
 				quotationService.updateQuotationStatusForReopenToRePlaced(qid, transactionId);
-				lcservice.getAlleligibleBAnksEmail(userId, transactionId, 0, "LC_REOPENING_ALERT_ToBanks", "");
+				QuotationBean bean =new QuotationBean();
+				lcservice.getAlleligibleBAnksEmail(userId, transactionId, 0, "LC_REOPENING_ALERT_ToBanks", "",bean);
 
 				response.setStatus("Success");// .setData(trans);
 				return new ResponseEntity<Object>(response, HttpStatus.OK);

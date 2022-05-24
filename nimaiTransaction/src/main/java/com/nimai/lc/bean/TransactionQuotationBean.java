@@ -98,9 +98,97 @@ public class TransactionQuotationBean {
 	private Date expiredOn;
 	private String rejectedReason;
 	private String isESGComplaint;
+	private Float participationAmount;
+	private Float participationCommission;
+	private String billType;
+	private String secTransactionType;
+	private String applicableLaw;
+	private String commissionScheme;
+	private Double minParticipationAmt;
+	private Double retentionAmt;
+	private String benchmark;
+	private String otherCondition;
 	
-	
-	
+	public String getBillType() {
+		return billType;
+	}
+
+	public void setBillType(String billType) {
+		this.billType = billType;
+	}
+
+	public String getApplicableLaw() {
+		return applicableLaw;
+	}
+
+	public void setApplicableLaw(String applicableLaw) {
+		this.applicableLaw = applicableLaw;
+	}
+
+	public String getCommissionScheme() {
+		return commissionScheme;
+	}
+
+	public void setCommissionScheme(String commissionScheme) {
+		this.commissionScheme = commissionScheme;
+	}
+
+	public Double getMinParticipationAmt() {
+		return minParticipationAmt;
+	}
+
+	public void setMinParticipationAmt(Double minParticipationAmt) {
+		this.minParticipationAmt = minParticipationAmt;
+	}
+
+	public Double getRetentionAmt() {
+		return retentionAmt;
+	}
+
+	public void setRetentionAmt(Double retentionAmt) {
+		this.retentionAmt = retentionAmt;
+	}
+
+	public String getBenchmark() {
+		return benchmark;
+	}
+
+	public void setBenchmark(String benchmark) {
+		this.benchmark = benchmark;
+	}
+
+	public String getOtherCondition() {
+		return otherCondition;
+	}
+
+	public void setOtherCondition(String otherCondition) {
+		this.otherCondition = otherCondition;
+	}
+
+	public String getSecTransactionType() {
+		return secTransactionType;
+	}
+
+	public void setSecTransactionType(String secTransactionType) {
+		this.secTransactionType = secTransactionType;
+	}
+
+	public Float getParticipationAmount() {
+		return participationAmount;
+	}
+
+	public void setParticipationAmount(Float participationAmount) {
+		this.participationAmount = participationAmount;
+	}
+
+	public Float getParticipationCommission() {
+		return participationCommission;
+	}
+
+	public void setParticipationCommission(Float participationCommission) {
+		this.participationCommission = participationCommission;
+	}
+
 	public String getIsESGComplaint() {
 		return isESGComplaint;
 	}

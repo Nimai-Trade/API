@@ -29,35 +29,72 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 	@Query(value="SELECT * from get_all_quotation where userid=(:userId)", nativeQuery = true )
 	List<QuotationMaster> findAllQuotationByUserId(@Param("userId") String userId);
 	
+	/*@Query(value="SELECT qu.* from get_all_quotation qu WHERE qu.bank_userid IN\r\n" + 
+			"(SELECT cpb.bank_userid FROM customer_preferred_banks cpb WHERE cpb.cust_userid=qu.userid)\r\n" + 
+			"AND qu.userid=(:userId)  \r\n" + 
+			"		and qu.transaction_id=(:transactionId) \r\n" + 
+			"		and (qu.validity_date>=curdate() and  \r\n" + 
+			"		(qu.quotation_status NOT IN ('Rejected','Expired','ExpPlaced','Withdrawn') \r\n" + 
+			"		OR qu.quotation_status IS NULL))	\r\n" + 
+			"		union\r\n" + 
+			"SELECT qu.* from get_all_quotation qu\r\n" + 
+			"where qu.userid=(:userId)  \r\n" + 
+			"		and qu.transaction_id=(:transactionId) \r\n" + 
+			"		and (qu.validity_date>=curdate() and  \r\n" + 
+			"		(qu.quotation_status NOT IN ('Rejected','Expired','ExpPlaced','Withdrawn') \r\n" + 
+			"		OR qu.quotation_status IS NULL))", nativeQuery = true )*/
+	@Query(value="SELECT qu.* from get_all_quotation qu\r\n" + 
+			"where qu.userid=(:userId)  \r\n" + 
+			"		and qu.transaction_id=(:transactionId) \r\n" + 
+			"		and (qu.validity_date>=curdate() and  \r\n" + 
+			"		(qu.quotation_status NOT IN ('Rejected','Expired','ExpPlaced','Withdrawn') \r\n" + 
+			"		OR qu.quotation_status IS NULL)) group by qu.bank_userid order by qu.total_quote_value;", nativeQuery = true )
+	List<QuotationMaster> findAllQuotationByUserIdAndTransactionId(@Param("userId") String userId,@Param("transactionId") String transactionId);
+
+	@Query(value="SELECT qu.* from get_all_quotation qu\r\n" + 
+			"where qu.userid=(:userId)  \r\n" + 
+			"		and qu.transaction_id=(:transactionId) \r\n" + 
+			"		and (qu.validity_date>=curdate() and  \r\n" + 
+			"		(qu.quotation_status NOT IN ('Rejected','Expired','ExpPlaced','Withdrawn') \r\n" + 
+			"		OR qu.quotation_status IS NULL)) group by qu.bank_userid order by qu.total_quote_value;", nativeQuery = true )
+	List<QuotationMaster> findAllQuotationByUserIdAndTransactionIdExpPreferred(@Param("userId") String userId,@Param("transactionId") String transactionId);
+
+	
 	@Query(value="SELECT qu.* from get_all_quotation qu\r\n" + 
 			"INNER JOIN customer_preferred_banks cpb\r\n" + 
-			"where qu.userid=:userId \r\n" + 
+			"where qu.quotation_id=:quoteId \r\n" + 
 			"and qu.transaction_id=:transactionId \r\n" + 
 			"and (qu.validity_date>=curdate() and \r\n" + 
 			"(qu.quotation_status NOT IN ('Rejected','Expired','ExpPlaced','Withdrawn') \r\n" + 
 			"OR qu.quotation_status IS NULL))\r\n" + 
 			"group by qu.bank_userid\r\n" + 
 			"order by cpb.id;", nativeQuery = true )
-	List<QuotationMaster> findAllQuotationByUserIdAndTransactionId(@Param("userId") String userId,@Param("transactionId") String transactionId);
+	List<QuotationMaster> findAllQuotationByQuoteIdAndTransactionId(@Param("quoteId") Integer quoteId,@Param("transactionId") String transactionId);
 
 	@Query(value="SELECT qu.* from get_all_quotation qu\r\n" + 
-			"where qu.userid=:userId\r\n" + 
+			"where qu.quotation_id=:quoteId\r\n" + 
 			"and qu.transaction_id=:transactionId\r\n" + 
 			"and (qu.validity_date>=curdate() and\r\n" + 
 			"(qu.quotation_status NOT IN ('Rejected','Expired','ExpPlaced','Withdrawn')\r\n" + 
 			"OR qu.quotation_status IS NULL))\r\n" + 
 			"group by qu.bank_userid;", nativeQuery = true )
-	List<QuotationMaster> findAllQuotationByUserIdAndTransactionIdExpPreferred(@Param("userId") String userId,@Param("transactionId") String transactionId);
+	List<QuotationMaster> findAllQuotationByQuoteIdAndTransactionIdExpPreferred(@Param("quoteId") Integer quoteId,@Param("transactionId") String transactionId);
 
 	@Query(value="SELECT cpb.* FROM customer_preferred_banks cpb WHERE cpb.cust_userid=:userId", nativeQuery = true )
 	List findPreferredBank(@Param("userId") String userId);
 
 	
-	@Query(value="SELECT * from get_all_quotation where userid=(:userId) and transaction_id=(:transactionId) and (quotation_status like '%Placed')", nativeQuery = true )
+	@Query(value="SELECT * from get_all_quotation where userid=(:userId) and transaction_id=(:transactionId) and (quotation_status like '%Placed' OR quotation_status like 'Rejected')", nativeQuery = true )
 	List<QuotationMaster> findAllReplacedQuotationByUserIdAndTransactionId(@Param("userId") String userId,@Param("transactionId") String transactionId);
+	
+	@Query(value="SELECT * from get_all_quotation where userid IN (:userId) and transaction_id=(:transactionId) and (quotation_status like '%Placed' OR quotation_status like 'Rejected')", nativeQuery = true )
+	List<QuotationMaster> findAllReplacedQuotationByUserIdsAndTransactionId(@Param("userId") List<String> userId,@Param("transactionId") String transactionId);
 
 	@Query(value="SELECT * from get_all_quotation where userid=(:userId) and transaction_id=(:transactionId) and quotation_status=(:status)", nativeQuery = true )
 	List<QuotationMaster> findQuotationByUserIdAndTransactionIdStatus(@Param("userId") String userId,@Param("transactionId") String transactionId,@Param("status") String status);
+	
+	@Query(value="SELECT * from get_all_quotation where userid IN (:userId) and transaction_id=(:transactionId) and quotation_status=(:status)", nativeQuery = true )
+	List<QuotationMaster> findQuotationByUserIdsAndTransactionIdStatus(@Param("userId") List<String> userId,@Param("transactionId") String transactionId,@Param("status") String status);
 	
 	@Query(value="SELECT * from get_all_quotation where quotation_id=(:quotationId)", nativeQuery = true )
 	List<QuotationMaster> findAllQuotationByQuotationId(Integer quotationId);
@@ -111,10 +148,10 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 	String findBankUserIdByQuotationId(Integer quotationId);
 
 	@Query(value= "select * from nimai_m_quotation where quotation_status='Accepted' and transaction_id=(:transId) and userid=(:userId)", nativeQuery = true)
-	QuotationMaster findAcceptedTransByTransIdUserId(String transId, String userId);
+	List<QuotationMaster> findAcceptedTransByTransIdUserId(String transId, String userId);
 
 	@Query(value= "select * from nimai_m_quotation where quotation_status='Accepted' and transaction_id=(:transId)", nativeQuery = true)
-	QuotationMaster findAcceptedTransByTransId(String transId);
+	List<QuotationMaster> findAcceptedTransByTransId(String transId);
 	
 	@Query(value="SELECT quotation_id from nimai_m_quotation where transaction_id=(:transactionId) and quotation_status='Rejected'", nativeQuery = true )
 	Integer findRejectedQuotationByTransId(String transactionId);
@@ -138,6 +175,12 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 	
 	@Query(value= "select * from nimai_m_quotation where (quotation_status!='Rejected' or quotation_status is null) and transaction_id=(:transId)", nativeQuery = true)
 	List<QuotationMaster> findValidityDateAndQidByTransId(String transId);
+	
+	@Query(value= "select * from nimai_m_quotation where (quotation_status like 'Accepted') and transaction_id=(:transId)", nativeQuery = true)
+	List<QuotationMaster> findAcceptedQuotationByTransId(String transId);
+	
+	@Query(value= "select * from nimai_m_quotation where quotation_id=(:qId)", nativeQuery = true)
+	QuotationMaster findQuotationByQId(Integer qId);
 
 	@Modifying
 	@Query(value= "update nimai_m_quotation set quotation_status=null where transaction_id=(:transId) and quotation_id=(:qid)", nativeQuery = true)
@@ -158,6 +201,12 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 	@Query(value= "select goods_type from nimai_mm_transaction where transaction_id=(:transId)", nativeQuery = true)
 	String getGoodsByTransactionId(String transId);
 	
+	@Query(value= "SELECT sec_transaction_type FROM nimai_mm_transaction WHERE transaction_id=(:transId)", nativeQuery = true)
+	String getSecTxnType(String transId);
+	
+	@Query(value= "SELECT lc_value FROM nimai_mm_transaction WHERE transaction_id=(:transId)", nativeQuery = true)
+	Double getTransactionValue(String transId);
+	
 	@Query(value= "SELECT count(transaction_id) FROM nimai_mm_transaction WHERE transaction_id IN\r\n" + 
 			"(SELECT transaction_id FROM nimai_m_quotation where bank_userid=(:bankUserId)) \r\n" + 
 			"and goods_type=(:goodsType) GROUP BY goods_type", nativeQuery = true)
@@ -165,6 +214,9 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 
 	@Query(value= "select total_quote_value from nimai_m_quotation where transaction_id=(:transactionId) and quotation_status='Accepted'", nativeQuery = true)
 	Float getAcceptedQuoteValue(String transactionId);
+	
+	@Query(value= "select total_quote_value from nimai_m_quotation where transaction_id=(:transactionId) and quotation_id=(:qId) and quotation_status='Accepted'", nativeQuery = true)
+	Float getAcceptedQuoteValueByTransIdQuoteId(String transactionId, Integer qId);
 
 	@Query(value= "select * from nimai_m_quotation where transaction_id=(:transactionId) and quotation_status='Accepted'", nativeQuery = true)
 	QuotationMaster getAcceptedQuoteByTransactionId(String transactionId);
@@ -218,6 +270,9 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 
 	@Query(value= "select quotation_id from nimai_m_quotation where transaction_id=(:transactionId) and userid=(:userId) and quotation_status=(:status)", nativeQuery = true)
 	Integer getQuotationId(String transactionId, String userId, String status);
+	
+	@Query(value= "select quotation_id from nimai_m_quotation where transaction_id=(:transactionId) and userid IN (:userId) and quotation_status=(:status)", nativeQuery = true)
+	Integer getQuotationIdByTxnIdUserIdsStatus(String transactionId, List<String> userId, String status);
 
 	@Query(value= "select quotation_id from nimai_m_quotation where transaction_id=(:transactionId) and userid=(:userId)", nativeQuery = true)
 	Integer getQuotationId(String transactionId, String userId);
@@ -262,8 +317,12 @@ public interface QuotationMasterRepository extends JpaRepository<QuotationMaster
 	@Query(value = "SELECT userid from nimai_m_customer where account_source=(:userId) or userid=(:userId)", nativeQuery = true)
 	List<NimaiClient> getAdditionalUserList(String userId);
 	
-	@Query(value="SELECT * from get_trans_quote_for_bank where quotation_status like (%:status%) and bank_userid IN (:addUserList)", nativeQuery = true )
+	@Query(value="SELECT * from get_trans_quote_for_bank where (user_id like 'CU%' or user_id like 'BC%') and quotation_status like (%:status%) and bank_userid IN (:addUserList)", nativeQuery = true )
 	List findTransQuoteDetByBankUserIdListAndStatus(List addUserList,
+			@Param("status") String status);
+	
+	@Query(value="SELECT * from get_trans_quote_for_bank where user_id like 'BA%' and quotation_status like (%:status%) and bank_userid IN (:addUserList)", nativeQuery = true )
+	List findSecTransQuoteDetByBankUserIdListAndStatus(List addUserList,
 			@Param("status") String status);
 
 	@Query(value = "select * from nimai_m_quotation nmq where nmq.transaction_id=(:transactionId) and quotation_status like '%Placed' and \r\n" + 

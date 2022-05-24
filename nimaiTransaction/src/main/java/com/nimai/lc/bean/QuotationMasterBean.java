@@ -20,7 +20,7 @@ public class QuotationMasterBean implements Serializable
 	private String confChgsIssuanceToClaimExp;
 	private Float discountingCharges;
     private Float refinancingCharges;
-	private Float bankAcceptCharges;
+	private Float bankerAcceptCharges;
 	private Float applicableBenchmark;
 	private String commentsBenchmark;
 	private Float negotiationChargesFixed;
@@ -54,8 +54,37 @@ public class QuotationMasterBean implements Serializable
 	private String rejectedBy;
 	private String preferred;
 	private String rating;
+	private Float participationAmount;
+	private Float participationCommission;
+	private String secTransactionType;
+	private Double lcValue;
 	
 	
+	
+	public Double getLcValue() {
+		return lcValue;
+	}
+	public void setLcValue(Double lcValue) {
+		this.lcValue = lcValue;
+	}
+	public String getSecTransactionType() {
+		return secTransactionType;
+	}
+	public void setSecTransactionType(String secTransactionType) {
+		this.secTransactionType = secTransactionType;
+	}
+	public Float getParticipationAmount() {
+		return participationAmount;
+	}
+	public void setParticipationAmount(Float participationAmount) {
+		this.participationAmount = participationAmount;
+	}
+	public Float getParticipationCommission() {
+		return participationCommission;
+	}
+	public void setParticipationCommission(Float participationCommission) {
+		this.participationCommission = participationCommission;
+	}
 	public String getRating() {
 		return rating;
 	}
@@ -181,11 +210,11 @@ public class QuotationMasterBean implements Serializable
 	public void setRefinancingCharges(Float refinancingCharges) {
 		this.refinancingCharges = refinancingCharges;
 	}
-	public Float getBankAcceptCharges() {
-		return bankAcceptCharges;
+	public Float getBankerAcceptCharges() {
+		return bankerAcceptCharges;
 	}
-	public void setBankAcceptCharges(Float bankAcceptCharges) {
-		this.bankAcceptCharges = bankAcceptCharges;
+	public void setBankerAcceptCharges(Float bankerAcceptCharges) {
+		this.bankerAcceptCharges = bankerAcceptCharges;
 	}
 	public Float getApplicableBenchmark() {
 		return applicableBenchmark;

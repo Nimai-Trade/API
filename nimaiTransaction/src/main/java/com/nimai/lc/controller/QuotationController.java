@@ -32,12 +32,14 @@ import com.nimai.lc.bean.NimaiLCMasterBean;
 import com.nimai.lc.bean.QuotationBean;
 import com.nimai.lc.bean.QuotationMasterBean;
 import com.nimai.lc.bean.TransactionQuotationBean;
+import com.nimai.lc.entity.NimaiClient;
 import com.nimai.lc.entity.NimaiLC;
 import com.nimai.lc.entity.NimaiLCMaster;
 import com.nimai.lc.entity.Quotation;
 import com.nimai.lc.entity.QuotationMaster;
 import com.nimai.lc.entity.TransactionSaving;
 import com.nimai.lc.payload.GenericResponse;
+import com.nimai.lc.repository.NimaiClientRepository;
 import com.nimai.lc.repository.TransactionSavingRepo;
 import com.nimai.lc.service.CSVService;
 import com.nimai.lc.service.LCService;
@@ -50,7 +52,9 @@ public class QuotationController
 {
 	@Autowired
 	QuotationService quotationService;
-	
+
+	@Autowired
+	NimaiClientRepository cuRepo;
 
 	@Autowired
 	CSVService csvFileService;
@@ -197,7 +201,7 @@ public class QuotationController
 				quotationService.confirmQuotationdetails(quotationBean);
 				//quotationService.sendMailToBank(quotationBean,"QUOTE_PLACE_ALERT_ToBanks");
 				//quotationService.quotePlace(transId);
-				lcservice.getAlleligibleBAnksEmail(quotationBean.getUserId(), transId, quotationId,"QUOTE_PLACE_ALERT_ToBanks","BId_ALERT_ToCustomer");
+				lcservice.getAlleligibleBAnksEmail(quotationBean.getUserId(), transId, quotationId,"QUOTE_PLACE_ALERT_ToBanks","BId_ALERT_ToCustomer",quotationBean);
 			
 				response.setStatus("Success");
 				return new ResponseEntity<Object>(response, HttpStatus.OK);
@@ -412,11 +416,13 @@ public class QuotationController
 		
 		System.out.println(""+transactionId);
 		System.out.println(""+userId);
-		
+		NimaiClient userDetails = cuRepo.getOne(userId);
+		NimaiClient obtainUserId = lcservice.checkMasterSubsidiary(userDetails.getAccountType(), userId,
+				userDetails);
 		NimaiLCMaster transDetails=lcservice.checkTransaction(transactionId);
-		Date creditExhaustDate=lcservice.getCreditExhaust(userId);
-		lcCount = lcservice.getLcCount(userId);
-		utilizedLcCount = lcservice.getUtilizedLcCount(userId);
+		Date creditExhaustDate=lcservice.getCreditExhaust(obtainUserId.getUserid());
+		lcCount = lcservice.getLcCount(obtainUserId.getUserid());
+		utilizedLcCount = lcservice.getUtilizedLcCount(obtainUserId.getUserid());
 		System.out.println("lcCount: "+lcCount);
 		System.out.println("utilizedLcCount: "+utilizedLcCount);
 		System.out.println("Credit Exhaust Date: "+creditExhaustDate);
@@ -463,6 +469,7 @@ public class QuotationController
 		//Integer confChgsMatur = getData.get("confChgsMatur");
 		//System.out.println("confChgsNegot: "+getData.get("confChgsNegot")+", confChgsMatur"+getData.get("confChgsMatur"));
 		if (quotations == null || quotations.isEmpty()) {
+			System.out.println("FAILED");
 			response.setStatus("Failure");
 			response.setErrCode("ASA004");
 			response.setErrMessage(ErrorDescription.getDescription("ASA004"));
@@ -509,8 +516,10 @@ public class QuotationController
 			quotationService.updateQuotationForReject(quotationId,userId,statusReason);
 			String transId=quotationService.getTransactionId(quotationId);
 			String userIdByQid=quotationService.getUserId(quotationId);
-			lcservice.getAlleligibleBAnksEmail(userIdByQid, transId, quotationId,"QUOTE_REJECTION","");
-			
+			System.out.println("userIdByQid: "+userIdByQid);
+			QuotationBean bean=new QuotationBean();
+			bean.setUserId(userIdByQid);
+			lcservice.getAlleligibleBAnksEmail(userIdByQid, transId, quotationId,"QUOTE_REJECTION","",bean);
 			response.setStatus("Quote Rejected Successfully");
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 			
@@ -535,15 +544,17 @@ public class QuotationController
 		String transId = quotationbean.getTransactionId();
 		String userId= quotationbean.getUserId();
 		System.out.println("Quotation Id: "+quotationId);
-		
-		lcCount = lcservice.getLcCount(userId);
-		utilizedLcCount = lcservice.getUtilizedLcCount(userId);
+		NimaiClient userDetails = cuRepo.getOne(userId);
+		NimaiClient obtainUserId = lcservice.checkMasterSubsidiary(userDetails.getAccountType(), userId,
+				userDetails);
+		lcCount = lcservice.getLcCount(obtainUserId.getUserid());
+		utilizedLcCount = lcservice.getUtilizedLcCount(obtainUserId.getUserid());
 	
-		System.out.println("Counts for User: " + userId);
+		System.out.println("Counts for User: " + obtainUserId.getUserid());
 		System.out.println("LC Count: " + lcCount);
 		System.out.println("LC Utilzed Count: " + utilizedLcCount);
 		NimaiLCMaster transDetails=lcservice.checkTransaction(transId);
-		Date creditExhaustDate=lcservice.getCreditExhaust(userId);
+		Date creditExhaustDate=lcservice.getCreditExhaust(obtainUserId.getUserid());
 		System.out.println("Credit Exhaust Date: "+creditExhaustDate);
 		if ((lcCount - utilizedLcCount < 0) && transDetails.getInsertedDate().after(creditExhaustDate)) 
 		{
@@ -552,20 +563,45 @@ public class QuotationController
 			response.setErrMessage("You cannot accept the quote. Please renew the Subscription Plan.");
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
-		QuotationMaster qmData=quotationService.getDetailsOfAcceptedTrans(transId);
-		if(qmData!=null)
+		List<QuotationMaster> qmData=quotationService.getDetailsOfAcceptedTrans(transId);
+		if(!qmData.isEmpty() && !obtainUserId.getUserid().substring(0, 2).equalsIgnoreCase("BA"))
 		{
 			response.setStatus("Failure");
 			System.out.println("Quote has already been Accepted for trans:"+quotationbean.getTransactionId());
 			response.setErrMessage("Quote has already been Accepted");
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
 		}
-		QuotationMaster qm=quotationService.getDetailsOfAcceptedTrans(transId,userId);
-		if(qm==null)
+		List<QuotationMaster> qm=quotationService.getDetailsOfAcceptedTrans(transId,userId);
+		if(!qm.isEmpty() && userId.substring(0, 2).equalsIgnoreCase("CU"))
+		{
+			response.setStatus("Failure");
+			System.out.println("You can't accept the quote of bank for the transaction:"+quotationbean.getTransactionId());
+			response.setErrMessage("You can't accept the quote of bank for the transaction:"+quotationbean.getTransactionId());
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		}
+		else
 		{
 			try
 			{
-				quotationService.updateQuotationForAccept(quotationId,transId);
+				if(!obtainUserId.getUserid().substring(0, 2).equalsIgnoreCase("BA"))
+					quotationService.updateQuotationForAccept(quotationId,transId,userId,transDetails);
+				else
+				{
+					System.out.println("===== In Secondary Txn Update =====");
+					int responseValue=quotationService.updateSecQuotationForAccept(quotationId,transId,userId,transDetails);
+					if(responseValue==0)
+					{
+						response.setStatus("Failure");
+						System.out.println("You cannot Accept the Quote as Participation Amount is greater than Minimum Participation Amount");
+						response.setErrMessage("You cannot Accept the Quote as Participation Amount is greater than Minimum Participation Amount");
+						return new ResponseEntity<Object>(response, HttpStatus.OK);
+					}
+					else
+					{
+						response.setStatus("");
+						return new ResponseEntity<Object>(response, HttpStatus.OK);
+					}
+				}
 				String bankUserId=quotationService.findBankUserIdByQuotationId(quotationId);
 				List<BankDetailsBean> bdb=quotationService.getBankDet(bankUserId);
 				response.setData(bdb);
@@ -575,7 +611,7 @@ public class QuotationController
 				boolean b=quotationService.checkDataForSaving(lcCountry,lcCurrency);
 				if(b==true)
 				{
-				String savingPercentValue=quotationService.calculateSavingPercent(transId,quotationId);
+				String savingPercentValue=quotationService.calculateSavingPercent(transId,quotationId,userId);
 				String splitted[]=savingPercentValue.split(",", 2);
 				Double savingPercent=Double.valueOf(splitted[0]);
 				DecimalFormat df=new DecimalFormat("#######0.00");
@@ -611,7 +647,8 @@ public class QuotationController
 					else
 						response.setStatus("");
 				}*/
-				lcservice.getAlleligibleBAnksEmail(userIdByQid, transId, quotationId,"QUOTE_ACCEPT","Bank_Details_tocustomer");
+				
+				lcservice.getAlleligibleBAnksEmail(userIdByQid, transId, quotationId,"QUOTE_ACCEPT","Bank_Details_tocustomer",quotationbean);
 				return new ResponseEntity<Object>(response, HttpStatus.OK);
 				
 			}
@@ -624,13 +661,7 @@ public class QuotationController
 				return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
 			}
 		}
-		else
-		{
-			response.setStatus("Failure");
-			System.out.println("You cant accept the quote of bank for the transaction:"+quotationbean.getTransactionId());
-			response.setErrMessage("You cant accept the quote of bank for the transaction:"+quotationbean.getTransactionId());
-			return new ResponseEntity<Object>(response, HttpStatus.OK);
-		}
+		
 		
 	}
 	
@@ -723,6 +754,28 @@ public class QuotationController
 	}
 	
 	@CrossOrigin(value = "*", allowedHeaders = "*")
+	@RequestMapping(value = "/getSecondaryDraftQuotationByBankUserId", produces = "application/json", method = RequestMethod.POST)
+	public ResponseEntity<?> getSecondaryDraftQuotationByBankUserId(@RequestBody QuotationBean quotationBean) throws NumberFormatException, ParseException {
+		logger.info("=========== Get Draft Quotation By Bank UserId ===========");
+		GenericResponse response = new GenericResponse<>();
+		String bankUserId = quotationBean.getBankUserId();
+		//List<Quotation> draftQuotations = quotationService.getAllDraftQuotationDetailsByBankUserId(bankUserId);
+		List<TransactionQuotationBean> draftQuotations = quotationService.getAllSecondaryDraftTransQuotationDetailsByBankUserId(bankUserId);
+		
+		if (draftQuotations.isEmpty()) {
+			response.setStatus("Failure");
+			response.setErrCode("ASA004");
+			response.setErrMessage(ErrorDescription.getDescription("ASA004"));
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		} else {
+			// lcservice.setDataToList(transactions);
+			response.setData(draftQuotations);
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		}
+
+	}
+	
+	@CrossOrigin(value = "*", allowedHeaders = "*")
 	@RequestMapping(value = "/getTransQuotationDtlByBankUserIdAndStatus", produces = "application/json", method = RequestMethod.POST)
 	public ResponseEntity<?> getAllTransQuotationByBankUserIdAndStatus(@RequestBody TransactionQuotationBean trquotationbean) throws ParseException {
 		logger.info("=========== Get Transaction Quotation Details By Bank UserId and Status ===========");
@@ -735,6 +788,31 @@ public class QuotationController
 		System.out.println(""+bankUserId);
 		//List<TransactionQuotationBean> quotations = quotationService.getTransactionQuotationDetailByBankUserIdAndStatus(bankUserId,quotationPlaced,transactionStatus);
 		List<TransactionQuotationBean> quotations = quotationService.getTransactionQuotationDetailByBankUserIdAndStatus(bankUserId,quotationStatus);
+		if (quotations.isEmpty()) {
+			response.setStatus("Failure");
+			response.setErrCode("ASA004");
+			response.setErrMessage(ErrorDescription.getDescription("ASA004"));
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		} else {
+			response.setData(quotations);
+			
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		}
+	}
+	
+	@CrossOrigin(value = "*", allowedHeaders = "*")
+	@RequestMapping(value = "/getSecTransQuotationDtlByBankUserIdAndStatus", produces = "application/json", method = RequestMethod.POST)
+	public ResponseEntity<?> getAllSecTransQuotationByBankUserIdAndStatus(@RequestBody TransactionQuotationBean trquotationbean) throws ParseException {
+		logger.info("=========== Get Transaction Quotation Details By Bank UserId and Status ===========");
+		GenericResponse response = new GenericResponse<>();
+		
+		String bankUserId = trquotationbean.getBankUserId();
+		//String quotationPlaced = trquotationbean.getQuotationPlaced();
+		//String transactionStatus = trquotationbean.getTransactionStatus();
+		String quotationStatus = trquotationbean.getQuotationStatus();
+		System.out.println(""+bankUserId);
+		//List<TransactionQuotationBean> quotations = quotationService.getTransactionQuotationDetailByBankUserIdAndStatus(bankUserId,quotationPlaced,transactionStatus);
+		List<TransactionQuotationBean> quotations = quotationService.getSecTransactionQuotationDetailByBankUserIdAndStatus(bankUserId,quotationStatus);
 		if (quotations.isEmpty()) {
 			response.setStatus("Failure");
 			response.setErrCode("ASA004");
@@ -868,7 +946,7 @@ public class QuotationController
 		String userId=quotationbean.getUserId();
 		System.out.println(""+transactionId);
 		System.out.println(""+quotationId);
-		List<QuotationMasterBean> quotations = quotationService.getQuotationDetailByUserIdAndTransactionId(userId,transactionId);
+		List<QuotationMasterBean> quotations = quotationService.getQuotationDetailByQuotationIdUserIdAndTransactionId(quotationId,userId,transactionId);
 		HashMap<String, Integer> getData=quotationService.calculateQuote(quotationId, transactionId, "");
 		//System.out.println("Quote Conf: "+getData);
 		//Integer confChgsNegot = getData.get("confChgsNegot");
@@ -930,6 +1008,30 @@ public class QuotationController
 			response.setStatus("Failure");
 			response.setErrMessage("You can't withdraw the quote as it has been already Accepted");
 			return new ResponseEntity<Object>(response, HttpStatus.OK);
+		}
+	}
+	
+	@CrossOrigin(value = "*", allowedHeaders = "*")
+	@RequestMapping(value = "/getDistributingBank/{bankUserId}", produces = "application/json", method = RequestMethod.POST)
+	public ResponseEntity<?> rejectQuotation(@PathVariable("bankUserId") String bankUserId) {
+		logger.info("=========== Reject Quotation ===========");
+		GenericResponse response = new GenericResponse<>();
+		
+		System.out.println("Getting distributing bank: "+bankUserId);
+		try
+		{
+			List<BankDetailsBean> bdb=quotationService.getBankDet(bankUserId);
+			response.setData(bdb);
+			response.setStatus("Success");
+			return new ResponseEntity<Object>(response, HttpStatus.OK);
+			
+		}
+		catch(Exception e)
+		{
+			response.setStatus("Failure");
+			response.setErrCode("EXE000");
+			response.setErrMessage(ErrorDescription.getDescription("EXE000")+" "+e);
+			return new ResponseEntity<Object>(response, HttpStatus.BAD_REQUEST);
 		}
 	}
 }

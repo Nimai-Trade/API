@@ -10,6 +10,7 @@ import com.nimai.lc.bean.BankDetailsBean;
 import com.nimai.lc.bean.QuotationBean;
 import com.nimai.lc.bean.QuotationMasterBean;
 import com.nimai.lc.bean.TransactionQuotationBean;
+import com.nimai.lc.entity.NimaiLCMaster;
 import com.nimai.lc.entity.Quotation;
 import com.nimai.lc.entity.QuotationMaster;
 
@@ -34,7 +35,7 @@ public interface QuotationService
 	public List<String> getSavingsByUserId(String bankUserId);
 	public List<String> getTotalSavings(String bankUserId);
 	public List<String> getTotalSavingsUserId(String ccy,String bankUserId);
-	public void updateQuotationForAccept(Integer quotationId,String transId);
+	public void updateQuotationForAccept(Integer quotationId,String transId, String userId, NimaiLCMaster transDetails);
 	//public List<TransactionQuotationBean> getTransactionQuotationDetailByBankUserIdAndStatus(String bankUserId, String quotationPlaced, String transactionStatus) throws ParseException;
 	public List<TransactionQuotationBean> getTransactionQuotationDetailByBankUserIdAndStatus(String bankUserId,String quotationStatus) throws ParseException;
 	public List<TransactionQuotationBean> getTransactionQuotationDetailByQId(int qId) throws NumberFormatException,ParseException;	
@@ -46,7 +47,7 @@ public interface QuotationService
 	public List<TransactionQuotationBean> getAllDraftTransQuotationDetailsByBankUserId(String bankUserId) throws NumberFormatException, ParseException;
 	public Quotation findDraftQuotation(String transId, String userId, String bankUserId);
 	public int findQuotationId(String transId, String userId, String bankUserId);
-	public QuotationMaster getDetailsOfAcceptedTrans(String transId, String userId);
+	public List<QuotationMaster> getDetailsOfAcceptedTrans(String transId, String userId);
 	public Integer getRejectedQuotationByTransactionId(String transactionId);
 	public void updateQuotationStatusForReopenToRePlaced(Integer qid, String transactionId) throws ParseException;
 	public List<QuotationMaster> getQuotationDetailByUserIdAndTransactionIdStatus(String userId, String transactionId,String status);
@@ -61,10 +62,17 @@ public interface QuotationService
 	public Integer getQuotationIdByTransIdUserId(String transactionId, String userId, String status);
 	public String getBankUserIdByQId(Integer quotationId);
 	public boolean withdrawQuoteByQid(QuotationBean quotationbean);
-	public String calculateSavingPercent(String transId, Integer quotationId);
+	public String calculateSavingPercent(String transId, Integer quotationId, String userId);
 	public boolean checkDataForSaving(String lcCountry, String lcCurrency);
 	public List<QuotationMaster> checkQuotationPlacedOrNot(String transactionId, String bankUserId);
-	QuotationMaster getDetailsOfAcceptedTrans(String transId);
+	List<QuotationMaster> getDetailsOfAcceptedTrans(String transId);
 	public QuotationMaster getQuotationDetailByAcceptedQuotationId(Integer quotationId);
+	List<QuotationMasterBean> getQuotationDetailByQuotationIdUserIdAndTransactionId(Integer quoteId, String userId,
+			String transactionId);
+	public List<TransactionQuotationBean> getAllSecondaryDraftTransQuotationDetailsByBankUserId(String bankUserId) throws NumberFormatException, ParseException;
+	public int updateSecQuotationForAccept(Integer quotationId, String transId, String userId,
+			NimaiLCMaster transDetails);
+	List<TransactionQuotationBean> getSecTransactionQuotationDetailByBankUserIdAndStatus(String bankUserId,
+			String quotationStatus) throws NumberFormatException, ParseException;
 	
 }

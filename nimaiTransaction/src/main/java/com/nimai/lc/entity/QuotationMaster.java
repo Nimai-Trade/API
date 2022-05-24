@@ -60,7 +60,7 @@ public class QuotationMaster
 	private Float refinancingCharges;
 	
 	@Column(name="BANKER_ACCEPT_CHARGES")
-	private Float bankAcceptCharges;
+	private Float bankerAcceptCharges;
 	
 	@Column(name="APPLICABLE_BENCHMARK")
 	private Float applicableBenchmark;
@@ -142,8 +142,28 @@ public class QuotationMaster
 	@Column(name="REJECTED_BY")
 	private String rejectedBy;
 	
+	@Column(name="PARTICIPATION_AMOUNT")
+	private Float participationAmount;
 	
+	@Column(name="PARTICIPATION_COMMISSION")
+	private Float participationCommission;
 	
+	public Float getParticipationAmount() {
+		return participationAmount;
+	}
+
+	public void setParticipationAmount(Float participationAmount) {
+		this.participationAmount = participationAmount;
+	}
+
+	public Float getParticipationCommission() {
+		return participationCommission;
+	}
+
+	public void setParticipationCommission(Float participationCommission) {
+		this.participationCommission = participationCommission;
+	}
+
 	public String getConfChgsIssuanceToClaimExp() {
 		return confChgsIssuanceToClaimExp;
 	}
@@ -268,12 +288,12 @@ public class QuotationMaster
 		this.refinancingCharges = refinancingCharges;
 	}
 
-	public Float getBankAcceptCharges() {
-		return bankAcceptCharges;
+	public Float getBankerAcceptCharges() {
+		return bankerAcceptCharges;
 	}
 
-	public void setBankAcceptCharges(Float bankAcceptCharges) {
-		this.bankAcceptCharges = bankAcceptCharges;
+	public void setBankerAcceptCharges(Float bankerAcceptCharges) {
+		this.bankerAcceptCharges = bankerAcceptCharges;
 	}
 
 	public Float getApplicableBenchmark() {

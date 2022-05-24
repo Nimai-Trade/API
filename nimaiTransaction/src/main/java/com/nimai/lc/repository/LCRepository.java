@@ -107,5 +107,23 @@ public interface LCRepository extends JpaRepository<NimaiLC, String>{
 	@Query(value= "update temp_transaction set transaction_id=(:newtid) where transaction_id=(:transactionId)", nativeQuery = true)
 	void updateTransactionIdByNew(String transactionId, String newtid);
 	
+	@Query(value=" select nmc.USERID from nimai_m_customer nmc \r\n" + 
+			" where (nmc.ACCOUNT_SOURCE=(:userId)) \r\n" + 
+			" and nmc.IS_ASSOCIATED=1 or nmc.USERID=(:userId)", nativeQuery = true )
+	List<String> getUserIds(@Param("userId") String userId);
+	
+	@Query(value=" select nmc.USERID from nimai_m_customer nmc \r\n" + 
+			" where (nmc.ACCOUNT_SOURCE=(:userId)) \r\n" + 
+			" or nmc.IS_ASSOCIATED=1 or nmc.USERID=(:userId)", nativeQuery = true )
+	List<String> getUserIdsWithSubsidiary(@Param("userId") String userId);
+	
+	@Query(value="SELECT * from get_all_draft_transaction where user_id IN (:userId) and branch_user_email=(:branchEmailId)", nativeQuery = true )
+	List<NimaiLC> findAllDraftTransactionByUserIdBranchEmailId(List<String> userId, String branchEmailId);
+
+	@Query(value="select nc.USERID from nimai_m_customer nc\r\n" + 
+			"where nc.COMPANY_NAME=(:applicantName) or nc.COMPANY_NAME=(:beneName)", nativeQuery = true )
+	String getUserIdByApplicantNameBeneName(String applicantName, String beneName);
+
+	
 	
 }

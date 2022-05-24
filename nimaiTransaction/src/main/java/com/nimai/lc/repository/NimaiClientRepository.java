@@ -27,4 +27,11 @@ public interface NimaiClientRepository extends JpaRepository<NimaiClient, String
 
 	@Query("SELECT nc.companyName FROM NimaiClient nc WHERE nc.userid= (:userId)")
 	String findCompanyNameByUserId(String userId);
+
+	@Query(value="select * from nimai_m_customer\r\n" + 
+			"nc where nc.USERID!=userId and \r\n" + 
+			"nc.Bank_type='UNDERWRITER' and nc.KYC_STATUS='Approved'\r\n" + 
+			"AND (nc.PAYMENT_STATUS='Approved' or nc.PAYMENT_STATUS='Success')",nativeQuery = true)
+	List<NimaiClient> getAllElBank(String userId);
+
 }

@@ -39,6 +39,7 @@ import com.nimai.lc.entity.QuotationMaster;
 import com.nimai.lc.entity.SavingInput;
 import com.nimai.lc.payload.GenericResponse;
 import com.nimai.lc.repository.LCMasterRepository;
+import com.nimai.lc.repository.LCRepository;
 import com.nimai.lc.repository.NimaiEmailSchedulerAlertToBanksRepository;
 import com.nimai.lc.repository.QuotationMasterRepository;
 import com.nimai.lc.repository.QuotationRepository;
@@ -57,6 +58,9 @@ public class QuotationServiceImpl implements QuotationService {
 	
 	@Autowired
 	LCMasterRepository lcMasterRepo;
+	
+	@Autowired
+	LCRepository lcRepo;
 
 	@Autowired
 	SavingInpRepo savingRepo;
@@ -108,6 +112,8 @@ public class QuotationServiceImpl implements QuotationService {
 		quote.setModifiedDate(quotationbean.getModifiedDate());
 		quote.setValidityDate(quotationbean.getValidityDate());
 		quote.setTermConditionComments(quotationbean.getTermConditionComments());
+		quote.setParticipationAmount(quotationbean.getParticipationAmount());
+		quote.setParticipationCommission(quotationbean.getParticipationCommission());
 		
 		HashMap<String,String> bankDet=getBankDetailsByBankUserId(quotationbean.getBankUserId()); 
 		quote.setBankName(bankDet.get("bankname"));
@@ -293,6 +299,9 @@ public class QuotationServiceImpl implements QuotationService {
 		quote.setModifiedBy(quotationbean.getModifiedBy());
 		quote.setModifiedDate(now);
 		quote.setTermConditionComments(quotationbean.getTermConditionComments());
+		quote.setParticipationAmount(quotationbean.getParticipationAmount());
+		quote.setParticipationCommission(quotationbean.getParticipationCommission());
+		
 		HashMap<String,String> bankDet=getBankDetailsByBankUserId(quotationbean.getBankUserId()); 
 		quote.setBankName(bankDet.get("bankname"));
 		quote.setBranchName(bankDet.get("branchname"));
@@ -305,6 +314,7 @@ public class QuotationServiceImpl implements QuotationService {
 		quote.setLastName(bankDet.get("lastname"));
 		quote.setIsDeleted(null);
 		quote.setValidityDate(quotationbean.getValidityDate());
+
 		quotationRepo.save(quote);
 	}
 
@@ -349,7 +359,7 @@ public class QuotationServiceImpl implements QuotationService {
 		quote.setConfChgsIssuanceToMatur(quotationbean.getConfChgsIssuanceToMatur());
 		quote.setConfChgsIssuanceToClaimExp(quotationbean.getConfChgsIssuanceToClaimExp());
 		quote.setDiscountingCharges(quotationbean.getDiscountingCharges());
-		quote.setBankAcceptCharges(quotationbean.getBankAcceptCharges());
+		quote.setBankerAcceptCharges(quotationbean.getBankerAcceptCharges());
 		quote.setRefinancingCharges(quotationbean.getRefinancingCharges());
 		quote.setApplicableBenchmark(quotationbean.getApplicableBenchmark());
 		quote.setCommentsBenchmark(quotationbean.getCommentsBenchmark());
@@ -376,7 +386,8 @@ public class QuotationServiceImpl implements QuotationService {
 		quote.setMobileNumber(bankDet.get("mobileno"));
 		quote.setFirstName(bankDet.get("firstname"));
 		quote.setLastName(bankDet.get("lastname"));
-		
+		quote.setParticipationAmount(quotationbean.getParticipationAmount());
+		quote.setParticipationCommission(quotationbean.getParticipationCommission());
         final String qStatus = this.quotationMasterRepo.getStatusAfterReopen(qid);
         //final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         final LocalDateTime nowForUpdate = LocalDateTime.now();
@@ -418,6 +429,48 @@ public class QuotationServiceImpl implements QuotationService {
 		ModelMapperUtil modelMapper = new ModelMapperUtil();
 		for(QuotationMaster qm:listOfQuotations)
 		{
+			NimaiClient bankDet = userDao.getCustDetailsByUserId(qm.getBankUserId());
+			QuotationMasterBean qmb=modelMapper.map(qm, QuotationMasterBean.class);
+			qmb.setNoOfQuotesByBank(quotationMasterRepo.getQuotesCount(qm.getBankUserId()));
+			qmb.setGoods(quotationMasterRepo.getGoodsByTransactionId(qm.getTransactionId()));
+			qmb.setNoOfGoodsByBank(quotationMasterRepo.getGoodsCount(qmb.getGoods(), qm.getBankUserId()));
+			qmb.setBankName(bankDet.getBankNbfcName()+", "+bankDet.getRgistredCountry());
+			String prefer=quotationMasterRepo.getPreferredBank(qm.getUserId(),qm.getBankUserId());
+			if(prefer==null || prefer.equalsIgnoreCase(""))
+				qmb.setPreferred("No");
+			else
+				qmb.setPreferred("Preferred");
+			qmb.setRating(quotationMasterRepo.getRating(qm.getBankUserId()));
+			qmList.add(qmb);
+			String secTxnType=quotationMasterRepo.getSecTxnType(qm.getTransactionId());
+			if(secTxnType==null || secTxnType.equalsIgnoreCase(""))
+				qmb.setSecTransactionType("");
+			else
+				qmb.setSecTransactionType(secTxnType);
+			Double lcValue=quotationMasterRepo.getTransactionValue(qm.getTransactionId());
+			if(lcValue==null)
+				qmb.setLcValue(0.0);
+			else
+				qmb.setLcValue(lcValue);
+		}
+		return qmList;
+	}
+	
+	@Override
+	public List<QuotationMasterBean> getQuotationDetailByQuotationIdUserIdAndTransactionId(Integer quoteId,String userId, String transactionId) {
+		// TODO Auto-generated method stub
+		//return quotationMasterRepo.findAllQuotationByUserIdAndTransactionId(userId, transactionId);
+		List<QuotationMasterBean> qmList = new ArrayList<>();
+		List<QuotationMaster> listOfQuotations;
+		List preferBank=quotationMasterRepo.findPreferredBank(userId);
+		if(preferBank.isEmpty())
+			listOfQuotations=quotationMasterRepo.findAllQuotationByQuoteIdAndTransactionIdExpPreferred(quoteId, transactionId);
+		else
+			listOfQuotations=quotationMasterRepo.findAllQuotationByQuoteIdAndTransactionId(quoteId, transactionId);
+		
+		ModelMapperUtil modelMapper = new ModelMapperUtil();
+		for(QuotationMaster qm:listOfQuotations)
+		{
 			QuotationMasterBean qmb=modelMapper.map(qm, QuotationMasterBean.class);
 			qmb.setNoOfQuotesByBank(quotationMasterRepo.getQuotesCount(qm.getBankUserId()));
 			qmb.setGoods(quotationMasterRepo.getGoodsByTransactionId(qm.getTransactionId()));
@@ -436,7 +489,9 @@ public class QuotationServiceImpl implements QuotationService {
 	@Override
 	public List<QuotationMaster> getQuotationDetailByUserIdAndTransactionIdStatus(String userId, String transactionId,String status) {
 		// TODO Auto-generated method stub
-		return quotationMasterRepo.findQuotationByUserIdAndTransactionIdStatus(userId, transactionId, status);
+		List<String> userids=lcRepo.getUserIdsWithSubsidiary(userId);
+		System.out.println("userids: "+userids);
+		return quotationMasterRepo.findQuotationByUserIdsAndTransactionIdStatus(userids, transactionId, status);
 	}
 
 	@Override
@@ -479,11 +534,12 @@ public class QuotationServiceImpl implements QuotationService {
 
 	
 	@Override
-	public void updateQuotationForAccept(Integer quotationId, String transId) {
+	public void updateQuotationForAccept(Integer quotationId, String transId, String userId, NimaiLCMaster transDetails) {
 		// TODO Auto-generated method stub
 		Integer qid=getRejectedQuotationByTransactionId(transId);
 		System.out.println("Rejected QuotationId: "+qid);
-		String quoteStatus=quotationMasterRepo.getStatus(qid);
+		//String quoteStatus=quotationMasterRepo.getStatus(qid);
+		
 		if(qid!=null)
 		{
 				quotationMasterRepo.updateQuotationStatusToExpiredExceptRejectedStatus(transId,qid);
@@ -494,9 +550,10 @@ public class QuotationServiceImpl implements QuotationService {
 		{
 				quotationMasterRepo.updateQuotationStatusToAccept(quotationId);
 				quotationMasterRepo.updateQuotationStatusToExpired(transId,quotationId);
-			
+				
 		}
-		lcMasterRepo.updateTransactionStatusToAccept(transId);
+			lcMasterRepo.updateTransactionStatusToAccept(transId);
+		
 	}
 
 	@Override
@@ -550,6 +607,33 @@ public class QuotationServiceImpl implements QuotationService {
 		List<TransactionQuotationBean> finalList=mapListToResponseBean(details);
 		
 		return finalList;
+	}
+	
+	
+	
+	@Override
+	public List<TransactionQuotationBean> getSecTransactionQuotationDetailByBankUserIdAndStatus(String bankUserId,String quotationStatus) throws NumberFormatException,ParseException {
+		
+	//public List<TransactionQuotationBean> getTransactionQuotationDetailByBankUserIdAndStatus(String bankUserId,String quotationPlaced,String transactionStatus) throws NumberFormatException,ParseException {
+		// TODO Auto-generated method stub
+		List<NimaiClient> listOfAdditionalUser;
+		if(bankUserId.substring(0, 2).equalsIgnoreCase("Al") == true)
+			listOfAdditionalUser=quotationMasterRepo.getAdditionalUserList(bankUserId.replaceFirst("All", ""));
+		else
+			listOfAdditionalUser=quotationMasterRepo.getAdditionalUserList(bankUserId);
+		System.out.println("List of additional user: "+listOfAdditionalUser);
+		List<String> additionalList = new ArrayList<String>();
+		for(NimaiClient nc:listOfAdditionalUser)
+		{
+			String user=nc.getUserid();
+			additionalList.add(user);
+		}
+		//List<TransactionQuotationBean> details = quotationMasterRepo.findTransQuotationBybankUserIdAndStatus(bankUserId,quotationPlaced,transactionStatus);
+		List<TransactionQuotationBean> details = quotationMasterRepo.findSecTransQuoteDetByBankUserIdListAndStatus(additionalList,quotationStatus);
+		//List<TransactionQuotationBean> details = quotationMasterRepo.findTransQuotationBybankUserIdAndStatus(bankUserId,quotationStatus);
+		List<TransactionQuotationBean> finalList=mapListToResponseBean(details);
+		
+		return finalList;
 	}	
 	
 	@Override
@@ -574,6 +658,14 @@ public class QuotationServiceImpl implements QuotationService {
 		return finalList;
 	}
 	
+	@Override
+	public List<TransactionQuotationBean> getAllSecondaryDraftTransQuotationDetailsByBankUserId(String bankUserId) throws NumberFormatException, ParseException {
+		// TODO Auto-generated method stub
+		List<TransactionQuotationBean> details = quotationRepo.findSecDraftTransQuotationBybankUser(bankUserId);
+		List<TransactionQuotationBean> finalList=mapListToResponseBean(details);
+		
+		return finalList;
+	}
 	
 	private List<TransactionQuotationBean> mapListToResponseBean(List<TransactionQuotationBean> details) throws NumberFormatException,ParseException{
 		// TODO Auto-generated method stub
@@ -638,8 +730,8 @@ public class QuotationServiceImpl implements QuotationService {
 			responseBean.setQuotationPlaced(((Object[])objA)[49]==null?"null":((Object[])objA)[49].toString());
 			responseBean.setTransactionStatus(((Object[])objA)[50]==null?"null":((Object[])objA)[50].toString());
 			responseBean.setAcceptedOn(((Object[])objA)[51]==null?new Date(0):(Date)simpleDateFormat.parse(((Object[])objA)[51].toString()));
-			
-			responseBean.setQuotationId(((Object[])objA)[52]==null?0:Integer.valueOf(((Object[])objA)[52].toString()));
+			Integer quoId=((Object[])objA)[52]==null?0:Integer.valueOf(((Object[])objA)[52].toString());
+			responseBean.setQuotationId(quoId);
 			responseBean.setBankUserId(((Object[])objA)[53]==null?"null":((Object[])objA)[53].toString());
 			responseBean.setConfirmationCharges(((Object[])objA)[54]==null?0:Float.valueOf(((Object[])objA)[54].toString()));
 			responseBean.setConfChgsIssuanceToNegot(((Object[])objA)[55]==null?"null":((Object[])objA)[55].toString());
@@ -665,7 +757,7 @@ public class QuotationServiceImpl implements QuotationService {
 			responseBean.setModifiedDate(((Object[])objA)[74]==null?new Date(0):(Date)simpleDateFormat.parse(((Object[])objA)[74].toString()));
 			responseBean.setRejectedBy(((Object[])objA)[75]==null?"null":((Object[])objA)[75].toString());
 			responseBean.setTermConditionComments(((Object[])objA)[76]==null?"null":((Object[])objA)[76].toString());
-			Float acceptedQuoteValue=quotationMasterRepo.getAcceptedQuoteValue(responseBean.getTransactionId());
+			Float acceptedQuoteValue=quotationMasterRepo.getAcceptedQuoteValueByTransIdQuoteId(responseBean.getTransactionId(),quoId);
 			responseBean.setAcceptedQuoteValue(acceptedQuoteValue);
 			responseBean.setRejectedOn(((Object[])objA)[77]==null?new Date(0):(Date)simpleDateFormat.parse(((Object[])objA)[77].toString()));
 			
@@ -727,6 +819,17 @@ public class QuotationServiceImpl implements QuotationService {
 			responseBean.setClaimExpiryDate(((Object[])objA)[82]==null?new Date(0):(Date)simpleDateFormat.parse(((Object[])objA)[82].toString()));
 			responseBean.setBgType(((Object[])objA)[83]==null?"null":((Object[])objA)[83].toString());
 			responseBean.setIsESGComplaint(((Object[])objA)[84]==null?"null":((Object[])objA)[84].toString());
+			responseBean.setParticipationAmount(((Object[])objA)[85]==null?0:Float.valueOf(((Object[])objA)[85].toString()));
+			responseBean.setParticipationCommission(((Object[])objA)[86]==null?0:Float.valueOf(((Object[])objA)[86].toString()));
+			responseBean.setSecTransactionType(((Object[])objA)[87]==null?"null":((Object[])objA)[87].toString());
+			responseBean.setBillType(((Object[])objA)[88]==null?"null":((Object[])objA)[88].toString());
+			responseBean.setApplicableLaw(((Object[])objA)[89]==null?"null":((Object[])objA)[89].toString());
+			responseBean.setCommissionScheme(((Object[])objA)[90]==null?"null":((Object[])objA)[90].toString());
+			responseBean.setMinParticipationAmt(((Object[])objA)[91]==null?0:Double.valueOf(((Object[])objA)[91].toString()));
+			responseBean.setRetentionAmt(((Object[])objA)[92]==null?0:Double.valueOf(((Object[])objA)[92].toString()));
+			responseBean.setBenchmark(((Object[])objA)[93]==null?"null":((Object[])objA)[93].toString());
+			responseBean.setOtherCondition(((Object[])objA)[94]==null?"null":((Object[])objA)[94].toString());
+			
 			list1.add(responseBean);
 		}
 		return list1;
@@ -837,13 +940,13 @@ public class QuotationServiceImpl implements QuotationService {
 	}
 
 	@Override
-	public QuotationMaster getDetailsOfAcceptedTrans(String transId, String userId) {
+	public List<QuotationMaster> getDetailsOfAcceptedTrans(String transId, String userId) {
 		// TODO Auto-generated method stub
 		return quotationMasterRepo.findAcceptedTransByTransIdUserId(transId,userId);
 	}
 	
 	@Override
-	public QuotationMaster getDetailsOfAcceptedTrans(String transId) {
+	public List<QuotationMaster> getDetailsOfAcceptedTrans(String transId) {
 		// TODO Auto-generated method stub
 		return quotationMasterRepo.findAcceptedTransByTransId(transId);
 	}
@@ -948,6 +1051,8 @@ public class QuotationServiceImpl implements QuotationService {
 		// TODO Auto-generated method stub
 		return quotationRepo.findDraftQuotationByQuotationId(quotationId);
 	}
+	
+	
 
 	@Override
 	public void deleteDraftQuotation(Integer quotationId) {
@@ -982,7 +1087,9 @@ public class QuotationServiceImpl implements QuotationService {
 	@Override
 	public Integer getQuotationIdByTransIdUserId(String transactionId, String userId, String status) {
 		// TODO Auto-generated method stub
-		return quotationMasterRepo.getQuotationId(transactionId,userId,status);
+		List<String> userids=lcRepo.getUserIdsWithSubsidiary(userId);
+		System.out.println("userIDs: "+userids);
+		return quotationMasterRepo.getQuotationIdByTxnIdUserIdsStatus(transactionId,userids,status);
 	}
 
 	@Override
@@ -1013,12 +1120,12 @@ public class QuotationServiceImpl implements QuotationService {
 	}
 
 	@Override
-	public String calculateSavingPercent(String transId, Integer quotationId) {
+	public String calculateSavingPercent(String transId, Integer quotationId, String userId) {
 		// TODO Auto-generated method stub
 		Double annualAssetValue,netRevenue,avgSpread;
 		String lcCountry=lcservice.getLCIssuingCountryByTransId(transId);
 		String lcCurrency=lcservice.getLCCurrencyByTransId(transId);
-		Integer tenorDays=lcservice.getLCTenorDays(transId);
+		Integer tenorDays=lcservice.getLCTenorDays(transId,userId);
 		Double lcValue=lcservice.getLCValue(transId);
 		Double t=Double.valueOf(tenorDays)/360;
 		System.out.println("LC Issuing Country: "+lcCountry);
@@ -1088,6 +1195,72 @@ public class QuotationServiceImpl implements QuotationService {
 	public QuotationMaster getQuotationDetailByAcceptedQuotationId(Integer quotationId) {
 		// TODO Auto-generated method stub
 		return quotationMasterRepo.findQuotationByAcceptedQuotationId(quotationId);
+	}
+
+	@Override
+	public int updateSecQuotationForAccept(Integer quotationId, String transId, String userId,
+			NimaiLCMaster transDetails) {
+		// TODO Auto-generated method stub
+		int respValue=0;
+		List<QuotationMaster> qmList=quotationMasterRepo.findAcceptedQuotationByTransId(transId);
+		Float finalParticipation=0f;
+		System.out.println("QuotationId: "+quotationId);
+		if(!qmList.isEmpty())
+		{
+			for(QuotationMaster qm:qmList)
+			{
+				finalParticipation=finalParticipation+qm.getParticipationAmount();
+			}
+			
+			NimaiLCMaster transDet=lcMasterRepo.findTransactionDetById(transId);
+			
+			
+			System.out.println("transDet.getMinParticipationAmt: "+transDet.getMinParticipationAmt());
+			System.out.println("finalParticipation: "+finalParticipation);
+			//System.out.println("qmData.getParticipationAmount: "+qmData.getParticipationAmount());
+				//if(transDet.getMinParticipationAmt()>=finalParticipation && qmData.getParticipationAmount()<=transDet.getMinParticipationAmt())
+			for(QuotationMaster qm:qmList)
+			{
+				QuotationMaster qmData=quotationMasterRepo.findQuotationByQId(quotationId);
+				if(qmData.getParticipationAmount()<=(transDet.getlCValue()-transDet.getRetentionAmt())-finalParticipation)
+				{
+					quotationMasterRepo.updateQuotationStatusToAccept(quotationId);
+					System.out.println("qmData.getParticipationAmount(): "+qmData.getParticipationAmount());
+					System.out.println("transDet.getlCValue(): "+transDet.getlCValue());
+					System.out.println("transDet.getRetentionAmt(): "+transDet.getRetentionAmt());
+					System.out.println("finalParticipation: "+finalParticipation);
+					if(qmData.getParticipationAmount()==(transDet.getlCValue()-transDet.getRetentionAmt())-finalParticipation)
+					{
+						lcMasterRepo.updateTransactionStatusToAccept(transId);
+					}
+					return 1;
+				}
+				
+				
+				
+			}
+		}
+		else
+		{
+			QuotationMaster qmData=quotationMasterRepo.findQuotationByQId(quotationId);
+			System.out.println("qmData: "+qmData);
+			//double participationAmt=qmData.getParticipationAmount();
+			System.out.println("Participation Amount: "+qmData.getParticipationAmount());
+			NimaiLCMaster transDet=lcMasterRepo.findTransactionDetById(transId);
+			System.out.println("Min Participation Amount: "+transDet.getMinParticipationAmt());
+			if(qmData.getParticipationAmount()<(transDet.getlCValue()-transDet.getRetentionAmt()))
+			{
+				quotationMasterRepo.updateQuotationStatusToAccept(quotationId);
+				if(qmData.getParticipationAmount()==(transDet.getlCValue()-transDet.getRetentionAmt()))
+				{
+					lcMasterRepo.updateTransactionStatusToAccept(transId);
+				}
+				return 1;
+			}
+			
+		}
+		//lcMasterRepo.updateTransactionStatusToAccept(transId);
+		return 0;
 	}
 
 	

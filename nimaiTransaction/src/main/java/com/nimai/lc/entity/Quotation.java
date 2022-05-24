@@ -140,8 +140,28 @@ public class Quotation
 	@Column(name="IS_DELETED")
 	private Integer isDeleted;
 	
+	@Column(name="PARTICIPATION_AMOUNT")
+	private Float participationAmount;
 	
+	@Column(name="PARTICIPATION_COMMISSION")
+	private Float participationCommission;
 	
+	public Float getParticipationAmount() {
+		return participationAmount;
+	}
+
+	public void setParticipationAmount(Float participationAmount) {
+		this.participationAmount = participationAmount;
+	}
+
+	public Float getParticipationCommission() {
+		return participationCommission;
+	}
+
+	public void setParticipationCommission(Float participationCommission) {
+		this.participationCommission = participationCommission;
+	}
+
 	public String getConfChgsIssuanceToClaimExp() {
 		return confChgsIssuanceToClaimExp;
 	}

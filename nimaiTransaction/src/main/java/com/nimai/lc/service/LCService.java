@@ -11,6 +11,7 @@ import com.nimai.lc.bean.NewRequestBean;
 import com.nimai.lc.bean.NimaiCustomerBean;
 import com.nimai.lc.bean.NimaiLCBean;
 import com.nimai.lc.bean.NimaiLCMasterBean;
+import com.nimai.lc.bean.QuotationBean;
 import com.nimai.lc.entity.NimaiLCPort;
 import com.nimai.lc.entity.NimaiSubscriptionDetails;
 import com.nimai.lc.entity.Countrycurrency;
@@ -89,7 +90,7 @@ public interface LCService {
 
 	public void deleteDraftTransaction(String transactionId);
 
-	void getAlleligibleBAnksEmail(String userId, String transactionId, int quoteId, String bankEmailEvent, String custEmailEvent);
+	void getAlleligibleBAnksEmail(String userId, String transactionId, int quoteId, String bankEmailEvent, String custEmailEvent, QuotationBean quotationBean);
 
 	public List<CustomerTransactionBean> getTransactionForCustomerByUserIdAndStatus(String userId, String status,String branchEmailId) throws ParseException;
 
@@ -139,7 +140,7 @@ public interface LCService {
 
 	public void updateLCUtilized(String userId);
 
-	public Integer getLCTenorDays(String transId);
+	public Integer getLCTenorDays(String transId, String userId);
 
 	public Double getAnnualAssetValue(String lcCountry, String lcCurrency);
 
@@ -178,6 +179,8 @@ public interface LCService {
 	public void updateTransactionValidity(NimaiLCMasterBean nimailc);
 
 	public Date getCreditExhaust(String userId);
+
+	List<NimaiLCMaster> getAllTransactionForBankSec(String userid);
 
 	
 }

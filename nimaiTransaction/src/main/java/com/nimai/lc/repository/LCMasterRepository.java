@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.query.Procedure;
 import org.springframework.data.repository.query.Param;
 
 import com.nimai.lc.bean.CustomerTransactionBean;
+import com.nimai.lc.bean.NimaiLCBean;
 import com.nimai.lc.entity.NimaiClient;
 import com.nimai.lc.entity.NimaiLCMaster;
 
@@ -31,6 +32,9 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 
 	@Query(value = "SELECT * from get_all_transaction where transaction_id=(:transid)", nativeQuery = true)
 	NimaiLCMaster findSpecificTransactionById(@Param("transid") String transid);
+	
+	@Query(value = "SELECT * from nimai_mm_transaction where transaction_id=(:transid)", nativeQuery = true)
+	NimaiLCMaster findTransactionDetById(@Param("transid") String transid);
 
 	@Query(value = "SELECT * from get_all_transaction where user_id=(:userid)", nativeQuery = true)
 	List<NimaiLCMaster> findByTransactionByUserId(@Param("userid") String userid);
@@ -91,6 +95,10 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 	@Modifying
 	@Query(value = "update nimai_mm_transaction set modified_date=now(), transaction_status='Active', status_reason='Active after Reopen' where transaction_id=(:transactionId) and user_id=(:userId)", nativeQuery = true)
 	void updateTransactionStatusToActive(String transactionId, String userId);
+	
+	@Modifying
+	@Query(value = "update nimai_mm_transaction set modified_date=now(), transaction_status='Active', status_reason='Active after Reopen' where transaction_id=(:transactionId) and user_id IN (:userId)", nativeQuery = true)
+	void updateTransactionStatusToActive(String transactionId, List<String> userId);
 
 	@Query(value = "select account_type from nimai_m_customer where userid=(:userId)", nativeQuery = true)
 	String getAccountType(String userId);
@@ -154,6 +162,10 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 	 
 	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where user_id=(:userId) and transaction_status=(:status)", nativeQuery = true)
 	List findTransactionForCustByUserIdAndStatusExpAll(@Param("userId") String userid,
+			@Param("status") String status);
+	
+	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where user_id IN (:userId) and transaction_status=(:status)", nativeQuery = true)
+	List findTransactionForCustByUserIdsAndStatusExpAll(@Param("userId") List<String> userid,
 			@Param("status") String status);
 	
 	@Query(value = "SELECT transaction_id,user_id,requirement_type,lc_issuance_bank,lc_value,goods_type,applicant_name,bene_name,quotation_received,inserted_date,validity,accepted_on,transaction_status,rejected_on,lc_currency,status_reason from get_all_transaction where user_id=(:userId) and (transaction_status=(:status) or transaction_status like '%Approved' or transaction_status like 'Pending')", nativeQuery = true)
@@ -261,6 +273,9 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 
 	@Query(value = "SELECT confirmation_period from nimai_mm_transaction where transaction_id=(:transId)", nativeQuery = true)
 	String getConfirmationPeriod(String transId);
+	
+	@Query(value = "SELECT usance_days from nimai_mm_transaction where transaction_id=(:transId)", nativeQuery = true)
+	Integer getUsanceDays(String transId);
 
 	@Query(value = "SELECT discounting_period from nimai_mm_transaction where transaction_id=(:transId)", nativeQuery = true)
 	String getDiscountingPeriod(String transId);
@@ -302,6 +317,21 @@ public interface LCMasterRepository extends JpaRepository<NimaiLCMaster, String>
 	
 	@Query(value = "SELECT status from nimai_subscription_details where userid=(:userId) order by SPL_SERIAL_NUMBER desc limit 1", nativeQuery = true)
 	String findActivePlanByUserId(String userId);
+
+	@Query(value="select * from nimai_mm_transaction nmt \r\n" + 
+			"where nmt.transaction_status='Active' and nmt.user_id like 'BA%'\r\n" + 
+			"and nmt.user_id!=(:inp_userid) \r\n" + 
+			"and nmt.transaction_id NOT IN\r\n" + 
+			"		(select qu.transaction_id from nimai_m_quotation qu\r\n" + 
+			"		where (qu.bank_userid=(:inp_userid)\r\n" + 
+			"		OR\r\n" + 
+			"		qu.bank_userid IN (select userid from nimai_m_customer where account_source=(:inp_userid))\r\n" + 
+			"		or\r\n" + 
+			"		qu.bank_userid IN (select ACCOUNT_SOURCE from nimai_m_customer where userid=(:inp_userid)))\r\n" + 
+			"		AND (qu.quotation_status='Placed' OR qu.quotation_status='Accepted' \r\n" + 
+			"		OR qu.quotation_status='Rejected' OR qu.quotation_status='ExpPlaced' \r\n" + 
+			"		OR qu.quotation_status='RePlaced' OR qu.quotation_status like 'Freeze%' or qu.quotation_status='Withdrawn')) order by nmt.inserted_date desc; ", nativeQuery = true )
+	List<NimaiLCMaster> findSecondaryTxnForBank(String inp_userid);
 	
 	
 }

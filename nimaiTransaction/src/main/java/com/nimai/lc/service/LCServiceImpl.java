@@ -33,6 +33,7 @@ import com.nimai.lc.bean.NewRequestBean;
 import com.nimai.lc.bean.NimaiCustomerBean;
 import com.nimai.lc.bean.NimaiLCBean;
 import com.nimai.lc.bean.NimaiLCMasterBean;
+import com.nimai.lc.bean.QuotationBean;
 import com.nimai.lc.bean.QuotationMasterBean;
 import com.nimai.lc.bean.TransactionQuotationBean;
 import com.nimai.lc.entity.Countrycurrency;
@@ -191,6 +192,15 @@ public class LCServiceImpl implements LCService {
 		nimailc.setLcProForma(nimailcbean.getLcProForma());
 		nimailc.setTenorFile(nimailcbean.getTenorFile());
 		nimailc.setIsESGComplaint(nimailcbean.getIsESGComplaint());
+		nimailc.setBillType(nimailcbean.getBillType());
+		nimailc.setSecTransactionType(nimailcbean.getSecTransactionType());
+		nimailc.setApplicableLaw(nimailcbean.getApplicableLaw());
+		nimailc.setCommissionScheme(nimailcbean.getCommissionScheme());
+		nimailc.setMinParticipationAmt(nimailcbean.getMinParticipationAmt());
+		nimailc.setRetentionAmt(nimailcbean.getRetentionAmt());
+		nimailc.setBenchmark(nimailcbean.getBenchmark());
+		nimailc.setOtherCondition(nimailcbean.getOtherCondition());
+		
 		lcrepo.save(nimailc);
 
 	}
@@ -226,7 +236,11 @@ public class LCServiceImpl implements LCService {
 			//if(branchEmailId.equalsIgnoreCase(""))
 			//	return lcrepo.findAllDraftTransactionByUserId(userId);
 			//else
-				return lcrepo.findAllDraftTransactionByUserIdBranchEmailId(userId,branchEmailId);
+			System.out.println("UserID: "+userId);
+			List<String> userids=lcrepo.getUserIds(userId);
+				//return lcrepo.findAllDraftTransactionByUserIdBranchEmailId(userId,branchEmailId);
+			System.out.println("List of userID: "+userids);
+			return lcrepo.findAllDraftTransactionByUserIdBranchEmailId(userids,branchEmailId);
 		}
 	}
 
@@ -353,6 +367,14 @@ public class LCServiceImpl implements LCService {
 	}
 
 	@Override
+	public List<NimaiLCMaster> getAllTransactionForBankSec(String userid) {
+		// TODO Auto-generated method stub
+		//lcmasterrepo.clearTransactionForBank();
+		return lcmasterrepo.findSecondaryTxnForBank(userid);
+	}
+
+	
+	@Override
 	public String generateSerialNo() {
 		// TODO Auto-generated method stub
 
@@ -422,6 +444,9 @@ public class LCServiceImpl implements LCService {
 			break;
 		case "BankGuarantee":
 			str = "BAGU";
+			break;
+		case "BillAvalisation":
+			str = "AVAL";
 			break;
 		}
 		return str;
@@ -610,16 +635,25 @@ public class LCServiceImpl implements LCService {
 		nimailc.setTenorFile(nimailcbean.getTenorFile());
 		nimailc.setQuotationReceived(nimailcbean.getQuotationReceived());
 		nimailc.setIsESGComplaint(nimailcbean.getIsESGComplaint());
+		nimailc.setBillType(nimailcbean.getBillType());
+		nimailc.setSecTransactionType(nimailcbean.getSecTransactionType());
+		nimailc.setApplicableLaw(nimailcbean.getApplicableLaw());
+		nimailc.setCommissionScheme(nimailcbean.getCommissionScheme());
+		nimailc.setMinParticipationAmt(nimailcbean.getMinParticipationAmt());
+		nimailc.setRetentionAmt(nimailcbean.getRetentionAmt());
+		nimailc.setBenchmark(nimailcbean.getBenchmark());
+		nimailc.setOtherCondition(nimailcbean.getOtherCondition());
+		
 		lcmasterrepo.save(nimailc);
 		
 		quoterepo.deleteQuoteByTrasanctionId(nimailc.getTransactionId(),nimailc.getUserId());
 		
 		NimaiLCMaster drafDet = lcmasterrepo.findByTransactionIdUserId(nimailc.getTransactionId(),nimailc.getUserId());
-		
+		QuotationBean bean=new QuotationBean();
 		NimaiLCMaster nlc=convertAndUpdateStatus(drafDet);
 		if(!nlc.getTransactionStatus().equalsIgnoreCase("Pending"))
 		{
-			getAlleligibleBAnksEmail(nlc.getUserId(), nlc.getTransactionId(), 0, "LC_UPDATE_ALERT_ToBanks", "LC_UPDATE(DATA)");
+			getAlleligibleBAnksEmail(nlc.getUserId(), nlc.getTransactionId(), 0, "LC_UPDATE_ALERT_ToBanks", "LC_UPDATE(DATA)",bean);
 		}
 	}
 
@@ -776,6 +810,14 @@ public class LCServiceImpl implements LCService {
 		nimailc.setLcProForma(nimailcbean.getLcProForma());
 		nimailc.setTenorFile(nimailcbean.getTenorFile());
 		nimailc.setIsESGComplaint(nimailcbean.getIsESGComplaint());
+		nimailc.setBillType(nimailcbean.getBillType());
+		nimailc.setSecTransactionType(nimailcbean.getSecTransactionType());
+		nimailc.setApplicableLaw(nimailcbean.getApplicableLaw());
+		nimailc.setCommissionScheme(nimailcbean.getCommissionScheme());
+		nimailc.setMinParticipationAmt(nimailcbean.getMinParticipationAmt());
+		nimailc.setRetentionAmt(nimailcbean.getRetentionAmt());
+		nimailc.setBenchmark(nimailcbean.getBenchmark());
+		nimailc.setOtherCondition(nimailcbean.getOtherCondition());
 		lcrepo.save(nimailc);
 
 		
@@ -815,7 +857,8 @@ public class LCServiceImpl implements LCService {
 	@Override
 	public void updateTransactionStatusToActive(String transactionId, String userId) {
 		// TODO Auto-generated method stub
-		lcmasterrepo.updateTransactionStatusToActive(transactionId, userId);
+		List<String> userids=lcrepo.getUserIdsWithSubsidiary(userId);
+		lcmasterrepo.updateTransactionStatusToActive(transactionId, userids);
 	}
 
 	@Override
@@ -873,14 +916,18 @@ public class LCServiceImpl implements LCService {
 	}
 	
 	@Override
-	public void getAlleligibleBAnksEmail(String userId,String transactionId,int quoteId,String bankEmailEvent,String custEmailEvent)
+	public void getAlleligibleBAnksEmail(String userId,String transactionId,int quoteId,String bankEmailEvent,String custEmailEvent,QuotationBean quotationbean)
 	{
 		if("LC_REOPENING_ALERT_ToBanks".equals(bankEmailEvent))
 		{
-			List<QuotationMaster> qmList=quotemasterrepo.findAllReplacedQuotationByUserIdAndTransactionId(userId, transactionId);
+			System.out.println("========== LC_REOPENING_ALERT_ToBanks ==========");
+			List<String> userids=lcrepo.getUserIdsWithSubsidiary(userId);
+			System.out.println("userids: "+userids);
+			List<QuotationMaster> qmList=quotemasterrepo.findAllReplacedQuotationByUserIdsAndTransactionId(userids, transactionId);
+			System.out.println("QmList: "+qmList);
 			for(QuotationMaster qm:qmList)
 			{
-				
+				/*25-02-2022
 				NimaiClient bankUserData = userDao.getCustDetailsByUserId(qm.getBankUserId());
 				NimaiEmailSchedulerAlertToBanks schedulerEntity = new NimaiEmailSchedulerAlertToBanks();
 				Calendar cal = Calendar.getInstance();
@@ -900,11 +947,82 @@ public class LCServiceImpl implements LCService {
 				schedulerEntity.setTransactionid(transactionId);
 				//schedulerEntity.setEmailEvent(custEmailEvent);
 				userDao.save(schedulerEntity);
+				*/
+				//25-02-2022 Send to all bank except rejected bank one
+				System.out.println("======== Getting eligible bank LC_REOPENING_ALERT_ToBanks========");
+				EntityManager entityManager = em.createEntityManager();
+				try 
+				{
+					
+					StoredProcedureQuery getBAnksEmail = entityManager
+									.createStoredProcedureQuery("get_eligible_banks", NimaiClient.class);
+					getBAnksEmail.registerStoredProcedureParameter("inp_customer_userID", String.class,
+									ParameterMode.IN);
+					getBAnksEmail.registerStoredProcedureParameter("inp_transaction_ID", String.class,
+									ParameterMode.IN);
+
+					getBAnksEmail.setParameter("inp_customer_userID", userId);
+					getBAnksEmail.setParameter("inp_transaction_ID", transactionId);
+					getBAnksEmail.execute();
+					ModelMapperUtil modelMapper = new ModelMapperUtil();
+					List<NimaiClient> nimaiCust = getBAnksEmail.getResultList();
+					System.out.println("UserID: "+userId);
+					System.out.println("TransactionID: "+transactionId);
+					EligibleEmailBeanResponse responseBean = new EligibleEmailBeanResponse();
+					//String custEmailId="";
+					List<EligibleEmailList> emailId = nimaiCust.stream().map(obj -> {
+					EligibleEmailList data = new EligibleEmailList();
+					NimaiEmailSchedulerAlertToBanks schedulerEntityNew = new NimaiEmailSchedulerAlertToBanks();
+					Calendar cal1 = Calendar.getInstance();
+					Date insertedDateNew = cal1.getTime();
+					schedulerEntityNew.setInsertedDate(insertedDateNew);
+					schedulerEntityNew.setCustomerid(userId);
+					System.out.println("Userid:"+userId);
+					schedulerEntityNew.setTransactionid(transactionId);
+					schedulerEntityNew.setEmailEvent(bankEmailEvent);
+					/* while updating set event as */
+					//schedulerEntity.setEmailEvent("LC_UPDATE_ALERT_ToBanks");
+					schedulerEntityNew.setBanksEmailID(obj.getEmailAddress());
+					schedulerEntityNew.setBankUserid(obj.getUserid());
+					schedulerEntityNew.setBankUserName(obj.getFirstName());
+					System.out.println("userID from getelibible bank"+obj.getUserid());
+					System.out.println("userID from get elibible from qm list"+qm.getBankUserId());
+					if(obj.getUserid().equalsIgnoreCase(qm.getBankUserId())||
+							obj.getUserid()==qm.getBankUserId()) {
+						System.out.println("inside first condition 12if"+obj.getUserid() +""+qm.getBankUserId());
+						schedulerEntityNew.setEmailFlag("Rejected_Quote");
+					}else {
+						System.out.println("inside first else condition"+obj.getUserid() +""+qm.getBankUserId());
+						schedulerEntityNew.setEmailFlag("Pending");
+					}
+					
+					//schedulerEntityNew.setQuotationId(qm.getQuotationId());
+					userDao.save(schedulerEntityNew);
+					data.setEmailList(obj.getEmailAddress());
+					return data;
+					}).collect(Collectors.toList());
+
+					if(nimaiCust.isEmpty())
+					{
+						System.out.println("No Banks Eligible");
+						
+					}
+				
+			}	catch (Exception e) 
+				{
+				System.out.println(""+e.getMessage());
+			}
+			finally 
+			{
+				entityManager.close();
+
+			}
 			}
 		}
 		else if("QUOTE_REJECTION".equals(bankEmailEvent))
 		{
 			String bankUserId=quotemasterrepo.getBankUserId(quoteId);
+			System.out.println("bankUserId: "+bankUserId);
 			NimaiClient bankUserData = userDao.getCustDetailsByUserId(bankUserId);
 			NimaiEmailSchedulerAlertToBanks schedulerEntity = new NimaiEmailSchedulerAlertToBanks();
 			Calendar cal = Calendar.getInstance();
@@ -942,6 +1060,14 @@ public class LCServiceImpl implements LCService {
 			schedulerEntityCu.setEmailEvent("QUOTE_REJECTION_CUSTOMER");
 			schedulerEntityCu.setQuotationId(quoteId);
 			schedulerEntityCu.setCustomerid(userId);
+			System.out.println("userId: "+userId);
+			if(userId!=quotationbean.getUserId() || (!userId.equalsIgnoreCase(quotationbean.getUserId()))) {
+				System.out.println("Not equal");
+				System.out.println("QuotationBean userid: "+quotationbean.getUserId());
+				NimaiClient parentCusData = userDao.getCustDetailsByUserId(quotationbean.getUserId());
+				schedulerEntityCu.setParentUserId(quotationbean.getUserId());
+				schedulerEntityCu.setPasscodeuserEmail(parentCusData.getEmailAddress());
+			}
 			schedulerEntityCu.setCustomerUserName(custUserName==null?"":custUserName);
 			schedulerEntityCu.setCustomerEmail(custEmailId==null?"":custEmailId);
 			schedulerEntityCu.setTransactionid(transactionId);
@@ -985,6 +1111,11 @@ public class LCServiceImpl implements LCService {
 			schedulerEntityCUst.setEmailFlag("Pending");
 			schedulerEntityCUst.setEmailEvent("QUOTE_ACCEPT_CUSTOMER");
 			schedulerEntityCUst.setCustomerid(userId);
+			if(userId!=quotationbean.getUserId() || (!userId.equalsIgnoreCase(quotationbean.getUserId()))) {
+				NimaiClient parentCusData = userDao.getCustDetailsByUserId(quotationbean.getUserId());
+				schedulerEntityCUst.setParentUserId(quotationbean.getUserId());
+				schedulerEntityCUst.setPasscodeuserEmail(parentCusData.getEmailAddress());
+			}
 			schedulerEntityCUst.setCustomerUserName(custUserName==null?"":custUserName);
 			schedulerEntityCUst.setCustomerEmail(custEmailId==null?"":custEmailId);
 			schedulerEntityCUst.setTransactionid(transactionId);
@@ -1058,7 +1189,20 @@ public class LCServiceImpl implements LCService {
 			getBAnksEmail.setParameter("inp_transaction_ID", transactionId);
 			getBAnksEmail.execute();
 			ModelMapperUtil modelMapper = new ModelMapperUtil();
-			List<NimaiClient> nimaiCust = getBAnksEmail.getResultList();
+			//<NimaiClient> nimaiCust = getBAnksEmail.getResultList();
+			List<NimaiClient> nimaiCust;
+			
+			//ModelMapperUtil modelMapper = new ModelMapperUtil();
+			if(userId.substring(0, 2).equalsIgnoreCase("BA")) {
+				System.out.println("=====Getting all eleigible banks in BAAU txn=====");
+				 nimaiCust = customerRepo.getAllElBank(userId);
+				 
+			}else {
+				System.out.println("=====Getting all eleigible banks in CU/BC txn=====");
+				 nimaiCust = getBAnksEmail.getResultList();	
+			}
+			
+			
 			System.out.println("UserID: "+userId);
 			System.out.println("TransactionID: "+transactionId);
 			EligibleEmailBeanResponse responseBean = new EligibleEmailBeanResponse();
@@ -1089,6 +1233,8 @@ public class LCServiceImpl implements LCService {
 				System.out.println("No Banks Eligible");
 				
 			}
+			System.out.println("1. UserID: "+userId);
+			System.out.println("2. TransactionID: "+transactionId);
 			System.out.println("Bank Details: "+nimaiCust);
 			Calendar cal = Calendar.getInstance();
 			Date insertedDate = cal.getTime();
@@ -1099,13 +1245,17 @@ public class LCServiceImpl implements LCService {
 			System.out.println("customerDetails: "+custDetails);
 			//if branch userEmail consist parent user email or passcode userEmail
 			if(custDetails==null  ) {
+				System.out.println("Customer Details not found");
 				schedulerEntityCust.setPasscodeuserEmail(passcodeDetails.getBranchUserEmail());
 				
 			}
 			String custUserName=lcmasterrepo.getCustomerName(userId);
-			String custEmailId=lcmasterrepo.getCustomerEmailId(userId);		
+			System.out.println("CustomerUserName: "+custUserName);
+			String custEmailId=lcmasterrepo.getCustomerEmailId(userId);	
+			System.out.println("CustomerEmailID: "+custEmailId);
 			schedulerEntityCust.setInsertedDate(insertedDate);
 			schedulerEntityCust.setQuotationId(quoteId);
+			System.out.println("QuoteID: "+quoteId);
 			schedulerEntityCust.setCustomerid(userId);
 			schedulerEntityCust.setCustomerUserName(custUserName==null?"":custUserName);
 			schedulerEntityCust.setCustomerEmail(custEmailId==null?"":custEmailId);
@@ -1246,7 +1396,12 @@ public class LCServiceImpl implements LCService {
 					if(status.equalsIgnoreCase("Active"))
 						details = lcmasterrepo.findPendingTransactionForCustByUserIdAndStatusExpAll(userId.replaceFirst("All", ""), status);
 					else
-						details = lcmasterrepo.findTransactionForCustByUserIdAndStatusExpAll(userId.replaceFirst("All", ""), status);
+					{
+						System.out.println("======In else if if else=====");
+						List<String> userids=lcrepo.getUserIds(userId.replaceFirst("All", ""));
+						System.out.println("UserdIDs: "+userids);
+						details = lcmasterrepo.findTransactionForCustByUserIdsAndStatusExpAll(userids, status);
+					}
 					List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 					return finalList;
 				}
@@ -1257,7 +1412,10 @@ public class LCServiceImpl implements LCService {
 					if(status.equalsIgnoreCase("Active"))
 						details = lcmasterrepo.findPendingTransactionForCustByUserIdAndStatus(userId.replaceFirst("All", ""), status);
 					else
+					{
+						System.out.println("======In else if if else 2=====");
 						details = lcmasterrepo.findTransactionForCustByUserIdAndStatus(userId.replaceFirst("All", ""), status);
+					}
 					List<CustomerTransactionBean> finalList=mapListToCustomerTransactionBean(details);
 					return finalList;
 				}
@@ -1389,34 +1547,39 @@ public class LCServiceImpl implements LCService {
 	}
 	
 	@Override
-	public Integer getLCTenorDays(String transId) {
+	public Integer getLCTenorDays(String transId, String userId) {
 		// TODO Auto-generated method stub
 		Integer tenor=0;
 		try
 		{
 			String productType=lcmasterrepo.getProductTypeByTransId(transId);
 			System.out.println("Product Type: "+productType);
-			switch(productType)
+			if(!userId.substring(0, 2).equalsIgnoreCase("BA"))
 			{
-			case "Confirmation":
-				tenor=Integer.valueOf(lcmasterrepo.getConfirmationPeriod(transId));
-				break;
-			case "ConfirmAndDiscount":
-				tenor=Integer.valueOf(lcmasterrepo.getConfirmationPeriod(transId));
-				break;
-			case "Discounting":
-				tenor=Integer.valueOf(lcmasterrepo.getDiscountingPeriod(transId));
-				break;
-			case "Banker":
-				tenor=Integer.valueOf(lcmasterrepo.getDiscountingPeriod(transId));
-				break;
-			case "Refinance":
-				tenor=Integer.valueOf(lcmasterrepo.getRefinancingPeriod(transId));
-				break;
-			case "BankGuarantee":
-				tenor=Integer.valueOf(lcmasterrepo.getConfirmationPeriod(transId));
-				break;
+				switch(productType)
+				{
+				case "Confirmation":
+					tenor=Integer.valueOf(lcmasterrepo.getConfirmationPeriod(transId));
+					break;
+				case "ConfirmAndDiscount":
+					tenor=Integer.valueOf(lcmasterrepo.getConfirmationPeriod(transId));
+					break;
+				case "Discounting":
+					tenor=Integer.valueOf(lcmasterrepo.getDiscountingPeriod(transId));
+					break;
+				case "Banker":
+					tenor=Integer.valueOf(lcmasterrepo.getDiscountingPeriod(transId));
+					break;
+				case "Refinance":
+					tenor=Integer.valueOf(lcmasterrepo.getRefinancingPeriod(transId));
+					break;
+				case "BankGuarantee":
+					tenor=Integer.valueOf(lcmasterrepo.getConfirmationPeriod(transId));
+					break;
+				}
 			}
+			else
+				tenor=lcmasterrepo.getUsanceDays(transId);
 		}
 		catch(Exception e)
 		{
@@ -2755,10 +2918,11 @@ public class LCServiceImpl implements LCService {
 						NimaiLCMaster drafDet = lcmasterrepo.findByTransactionIdUserId(transId, userId);
 						System.out.println("draftDet: "+draftDet);
 						NimaiLCMaster lcDetails1=convertAndUpdateStatus(drafDet);
+						QuotationBean bean=new QuotationBean();
 						System.out.println("lcDetails1: "+lcDetails1);
 						if(!lcDetails1.getTransactionStatus().equalsIgnoreCase("Pending"))
 						{
-							getAlleligibleBAnksEmail(userId, transId,0,"LC_UPLOAD_ALERT_ToBanks","LC_UPLOAD(DATA)");
+							getAlleligibleBAnksEmail(userId, transId,0,"LC_UPLOAD_ALERT_ToBanks","LC_UPLOAD(DATA)",bean);
 						}
 						response.setStatus("Success");
 						response.setErrCode(lcDetails1.getTransactionStatus());

@@ -166,6 +166,79 @@ public class NimaiLC {
 	@Column(name="is_esg_complaint")
 	private String isESGComplaint;
 	
+	@Column(name="bill_type")
+	private String billType;
+	
+	@Column(name="sec_transaction_type")
+	private String secTransactionType;
+	
+	@Column(name="applicable_law")
+	private String applicableLaw;
+	
+	@Column(name="commission_scheme")
+	private String commissionScheme;
+	
+	@Column(name="min_participation_amt")
+	private Double minParticipationAmt;
+	
+	@Column(name="retention_amt")
+	private Double retentionAmt;
+	
+	@Column(name="benchmark")
+	private String benchmark;
+	
+	@Column(name="other_condition")
+	private String otherCondition;
+	
+	public String getBillType() {
+		return billType;
+	}
+	public void setBillType(String billType) {
+		this.billType = billType;
+	}
+	
+	public String getSecTransactionType() {
+		return secTransactionType;
+	}
+	public void setSecTransactionType(String secTransactionType) {
+		this.secTransactionType = secTransactionType;
+	}
+	public String getApplicableLaw() {
+		return applicableLaw;
+	}
+	public void setApplicableLaw(String applicableLaw) {
+		this.applicableLaw = applicableLaw;
+	}
+	public String getCommissionScheme() {
+		return commissionScheme;
+	}
+	public void setCommissionScheme(String commissionScheme) {
+		this.commissionScheme = commissionScheme;
+	}
+	public Double getMinParticipationAmt() {
+		return minParticipationAmt;
+	}
+	public void setMinParticipationAmt(Double minParticipationAmt) {
+		this.minParticipationAmt = minParticipationAmt;
+	}
+	public Double getRetentionAmt() {
+		return retentionAmt;
+	}
+	public void setRetentionAmt(Double retentionAmt) {
+		this.retentionAmt = retentionAmt;
+	}
+	public String getBenchmark() {
+		return benchmark;
+	}
+	public void setBenchmark(String benchmark) {
+		this.benchmark = benchmark;
+	}
+	public String getOtherCondition() {
+		return otherCondition;
+	}
+	public void setOtherCondition(String otherCondition) {
+		this.otherCondition = otherCondition;
+	}
 	
 	public String getIsESGComplaint() {
 		return isESGComplaint;
